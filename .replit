@@ -1,0 +1,8 @@
+run = "node backend/server.js"
+entrypoint = "backend/server.js"
+
+[deployment]
+run = "node backend/server.js"
+
+[language]
+name = "nodejs"
