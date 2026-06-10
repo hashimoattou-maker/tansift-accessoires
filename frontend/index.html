@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="clair">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Accessoires Tansift</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231a3a5c'/><text x='16' y='22' text-anchor='middle' fill='%23e8760a' font-size='18' font-weight='bold'>T</text></svg>">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Splash screen -->
+    <div id="splash">
+      <div class="splash-content">
+        <div class="splash-icon">T</div>
+        <h1>Accessoires Tansift</h1>
+        <p>ERP Automotive</p>
+        <div class="splash-loader"><div class="splash-bar"></div></div>
+      </div>
+    </div>
+
+    <!-- Login -->
+    <div id="login" class="hidden">
+      <div class="login-card">
+        <div class="login-logo">T</div>
+        <h2>Accessoires Tansift</h2>
+        <p class="login-subtitle">ERP - Gestion automobile</p>
+        <form id="loginForm" autocomplete="off">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="admin@tansift.ma" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </div>
+          <div id="loginError" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-full">
+            <span class="btn-text">Connexion</span>
+            <span class="btn-loader hidden"><span class="spinner"></span></span>
+          </button>
+        </form>
+        <p class="login-hint">Admin: admin@tansift.ma / admin123</p>
+      </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div id="mainLayout" class="hidden">
+      <!-- Sidebar -->
+      <aside id="sidebar">
+        <div class="sidebar-header">
+          <a href="#dashboard" class="sidebar-logo">TA</a>
+          <button id="sidebarToggle" class="sidebar-toggle" title="Réduire">◀</button>
+        </div>
+        <nav class="sidebar-nav" id="sidebarNav">
+          <div class="nav-section-label">Menu principal</div>
+          <a href="#dashboard" class="nav-item" data-route="dashboard"><span class="nav-icon">📊</span><span class="nav-label">Tableau de bord</span></a>
+          <a href="#articles" class="nav-item" data-route="articles"><span class="nav-icon">📦</span><span class="nav-label">Articles & Stock</span></a>
+          <a href="#moteurs" class="nav-item" data-route="moteurs"><span class="nav-icon">🔧</span><span class="nav-label">Moteurs</span></a>
+          <a href="#clients" class="nav-item" data-route="clients"><span class="nav-icon">👥</span><span class="nav-label">Clients</span></a>
+          <a href="#situation" class="nav-item" data-route="situation"><span class="nav-icon">💰</span><span class="nav-label">Situation Clients</span></a>
+          <a href="#fournisseurs" class="nav-item" data-route="fournisseurs"><span class="nav-icon">🏭</span><span class="nav-label">Fournisseurs</span></a>
+          <div class="nav-section-label">Documents</div>
+          <a href="#documents/achats" class="nav-item" data-route="documents-achats"><span class="nav-icon">🛒</span><span class="nav-label">Achats</span></a>
+          <a href="#documents/ventes" class="nav-item" data-route="documents-ventes"><span class="nav-icon">💳</span><span class="nav-label">Ventes</span></a>
+          <div class="nav-section-label">Outils</div>
+          <a href="#barcodes" class="nav-item" data-route="barcodes"><span class="nav-icon">🏷️</span><span class="nav-label">Codes-barres</span></a>
+          <a href="#rapports" class="nav-item" data-route="rapports"><span class="nav-icon">📈</span><span class="nav-label">Rapports</span></a>
+          <a href="#parametres" class="nav-item" data-route="parametres"><span class="nav-icon">⚙️</span><span class="nav-label">Paramètres</span></a>
+          <a href="#audit" class="nav-item" data-route="audit"><span class="nav-icon">📋</span><span class="nav-label">Journal Audit</span></a>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatar">A</div>
+            <div class="user-info">
+              <span class="user-name" id="userName">Admin</span>
+              <span class="user-role" id="userRole">Administrateur</span>
+            </div>
+          </div>
+          <button id="logoutBtn" class="btn-logout" title="Déconnexion">🚪</button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div id="mainContent">
+        <header id="topbar">
+          <div class="topbar-left">
+            <div class="breadcrumb" id="breadcrumb">
+              <span class="breadcrumb-item">Tableau de bord</span>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <div class="search-box">
+              <input type="text" id="globalSearch" placeholder="Rechercher article, client..." class="search-input">
+              <span class="search-icon">🔍</span>
+              <div id="searchResults" class="search-results hidden"></div>
+            </div>
+            <button id="themeToggle" class="topbar-btn" title="Mode sombre/clair">🌙</button>
+            <button id="notifBtn" class="topbar-btn notif-btn" title="Notifications">
+              🔔 <span id="notifBadge" class="notif-badge hidden">0</span>
+            </button>
+            <div class="notif-dropdown hidden" id="notifDropdown">
+              <div class="notif-header">Notifications</div>
+              <div id="notifList" class="notif-list"><p class="notif-empty">Aucune notification</p></div>
+            </div>
+          </div>
+        </header>
+
+        <main id="pageContent">
+          <!-- Dynamic content rendered here -->
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toastContainer"></div>
+
+  <!-- Modal container -->
+  <div id="modalOverlay" class="hidden">
+    <div id="modalContent" class="modal-content"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
