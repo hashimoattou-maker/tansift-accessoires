@@ -24,6 +24,16 @@ function startServer() {
     res.json({ status: 'ok', time: new Date().toISOString(), db: fs.existsSync(DB_PATH) });
   });
 
+  // Save DB on each request for persistence (must be BEFORE routes to intercept res.json)
+  app.use((req, res, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = function(body) {
+      try { saveDatabase(); } catch(e) {}
+      return originalJson(body);
+    };
+    next();
+  });
+
   // Routes
   app.use('/api/auth', require('./routes/auth')(db));
   app.use('/api/articles', authenticateToken, require('./routes/articles')(db));
@@ -39,16 +49,6 @@ function startServer() {
   app.use('/api/parametres', authenticateToken, require('./routes/parametres')(db));
   app.use('/api/audit', authenticateToken, require('./routes/audit')(db));
   app.use('/api/tva', require('./routes/tva')(db));
-
-  // Save DB on each request for persistence
-  app.use((req, res, next) => {
-    const originalJson = res.json.bind(res);
-    res.json = function(body) {
-      try { saveDatabase(); } catch(e) {}
-      return originalJson(body);
-    };
-    next();
-  });
 
   // Serve index.html for SPA
   app.get('*', (req, res) => {
