@@ -67,6 +67,8 @@ module.exports = function(db) {
             .run(ligne.composant_id, 'entree', ligne.quantite || 1, comp.stock_actuel, newStock, 'desassemblage', req.user?.id, `Désassemblage moteur ${moteur.reference}`);
           db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(newStock, ligne.composant_id);
         }
+
+        db.prepare(`DELETE FROM nomenclature_moteur WHERE moteur_id = ? AND composant_id = ?`).run(req.params.id, ligne.composant_id);
       }
 
       db.prepare(`UPDATE articles SET moteur_complet = 0 WHERE id = ?`).run(req.params.id);
@@ -81,7 +83,11 @@ module.exports = function(db) {
     const moteur = db.prepare(`SELECT * FROM articles WHERE id = ? AND est_moteur = 1`).get(req.params.id);
     if (!moteur) return res.status(404).json({ error: 'Moteur introuvable' });
 
-    const nomenclature = db.prepare(`SELECT nm.*, a.stock_actuel FROM nomenclature_moteur nm JOIN articles a ON nm.composant_id = a.id WHERE nm.moteur_id = ?`).all(req.params.id);
+    const nomenclature = db.prepare(`SELECT nm.*, a.stock_actuel, a.reference FROM nomenclature_moteur nm JOIN articles a ON nm.composant_id = a.id WHERE nm.moteur_id = ?`).all(req.params.id);
+
+    if (nomenclature.length === 0) {
+      return res.status(400).json({ error: 'Aucune pièce dans la nomenclature. Ajoutez des pièces avant de reconstruire.' });
+    }
 
     const mvt = db.transaction(() => {
       for (const comp of nomenclature) {

@@ -528,7 +528,7 @@ function showMoteurDetail(id) {
     htmlContent += `<button class="btn btn-primary btn-sm" onclick="ajouterPieceNomenclature(${moteur.id})">+ Ajouter pièce</button>`;
     if (moteur.moteur_complet) {
       htmlContent += `<button class="btn btn-warning btn-sm" onclick="desassemblerMoteur(${moteur.id})">🔧 Désassembler</button>`;
-    } else {
+    } else if (nomenclature.length > 0) {
       htmlContent += `<button class="btn btn-success btn-sm" onclick="reconstruireMoteur(${moteur.id})">🔨 Reconstruire</button>`;
     }
     htmlContent += '</div>';
