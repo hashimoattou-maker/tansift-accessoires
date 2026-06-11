@@ -13,6 +13,7 @@ module.exports = function(db) {
     const result = moteurs.map(m => ({
       ...m,
       etat: m.total_composants === 0 ? 'non_defini' :
+            !m.moteur_complet ? 'partiel' :
             m.composants_disponibles === m.total_composants ? 'complet' :
             m.composants_disponibles === 0 ? 'manquant' : 'partiel'
     }));
