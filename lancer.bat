@@ -1,8 +1,8 @@
 @echo off
-title Accessoires Tansift
+title Accessoires Tensift
 cd /d "%~dp0"
 echo ========================================
-echo    Accessoires Tansift - ERP Automotive
+echo    Accessoires Tensift - ERP Automotive
 echo ========================================
 echo.
 

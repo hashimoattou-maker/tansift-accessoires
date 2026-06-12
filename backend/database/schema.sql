@@ -419,7 +419,7 @@ INSERT OR IGNORE INTO taux_tva (id, taux, label, defaut) VALUES
   (5, 0.0, 'Exonéré', 0);
 
 INSERT OR IGNORE INTO parametres (cle, valeur, type, section) VALUES
-  ('societe_nom', 'Accessoires Tansift', 'text', 'societe'),
+  ('societe_nom', 'Accessoires Tensift', 'text', 'societe'),
   ('societe_slogan', 'Votre partenaire automobile de confiance', 'text', 'societe'),
   ('societe_ice', '', 'text', 'societe'),
   ('societe_if', '', 'text', 'societe'),

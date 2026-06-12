@@ -1,5 +1,5 @@
 /* ============================================================
-   Accessoires Tansift - Application SPA
+   Accessoires Tensift - Application SPA
    ============================================================ */
 
 const API = '/api';
@@ -1394,7 +1394,7 @@ function printDocument(id) {
     const modele = p.modele_impression || 'classique';
     const devise = p.devise || 'MAD';
     const societe = {
-      nom: p.societe_nom || 'Accessoires Tansift',
+      nom: p.societe_nom || 'Accessoires Tensift',
       slogan: p.societe_slogan || 'ERP Automotive',
       logo: p.societe_logo_url || '',
       logoWidth: p.societe_logo_width || 180,
@@ -1818,7 +1818,7 @@ async function generateReport(type) {
     <p style="color:#6b7280">Généré le ${new Date().toLocaleString('fr-FR')}</p>
     <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>
-    <div class="footer">Accessoires Tansift — ERP Automotive</div>
+    <div class="footer">Accessoires Tensift — ERP Automotive</div>
     <script>window.print()<\/script>
     </body></html>
   `);
@@ -1854,7 +1854,7 @@ function switchParamTab(el, tab) {
           <div class="card">
             <div class="card-header"><h3>Informations société</h3><button class="btn btn-primary btn-sm" onclick="saveSociete()">💾 Enregistrer</button></div>
             <form id="societeForm">
-              <div class="form-row"><div class="form-group"><label>Nom société</label><input name="societe_nom" class="form-control" value="${p.societe_nom||'Accessoires Tansift'}"></div>
+              <div class="form-row"><div class="form-group"><label>Nom société</label><input name="societe_nom" class="form-control" value="${p.societe_nom||'Accessoires Tensift'}"></div>
               <div class="form-group"><label>Slogan</label><input name="societe_slogan" class="form-control" value="${p.societe_slogan||''}"></div></div>
               <div class="form-row"><div class="form-group"><label>ICE</label><input name="societe_ice" class="form-control" value="${p.societe_ice||''}"></div>
               <div class="form-group"><label>IF</label><input name="societe_if" class="form-control" value="${p.societe_if||''}"></div></div>

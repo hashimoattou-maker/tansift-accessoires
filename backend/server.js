@@ -59,7 +59,7 @@ function startServer() {
   });
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✓ Serveur Accessoires Tansift démarré sur http://0.0.0.0:${PORT}`);
+    console.log(`✓ Serveur Accessoires Tensift démarré sur http://0.0.0.0:${PORT}`);
   });
 }
 
