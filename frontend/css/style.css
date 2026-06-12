@@ -165,9 +165,9 @@ a:hover { color: var(--accent); }
 }
 .login-logo {
   width: 64px; height: 64px; margin: 0 auto 1rem;
-  background: var(--accent); border-radius: 16px;
-  color: #fff; font-size: 32px; font-weight: 900; line-height: 64px;
+  display: flex; align-items: center; justify-content: center;
 }
+.login-logo svg { filter: drop-shadow(0 2px 8px rgba(232,118,10,0.3)); }
 .login-card h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
 .login-subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; }
 .login-card .form-group { text-align: left; margin-bottom: 1rem; }
@@ -196,10 +196,10 @@ a:hover { color: var(--accent); }
   padding: 0.75rem 1rem; height: var(--topbar-height); border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .sidebar-logo {
-  font-size: 1.3rem; font-weight: 900; background: var(--accent); color: #fff;
-  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   text-decoration: none; flex-shrink: 0;
 }
+.sidebar-logo svg { filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2)); }
 .sidebar-toggle {
   background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.8rem;
   padding: 4px; border-radius: 4px; transition: var(--transition);
