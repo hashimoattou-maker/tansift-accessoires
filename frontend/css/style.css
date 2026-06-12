@@ -164,10 +164,10 @@ a:hover { color: var(--accent); }
   box-shadow: var(--shadow-lg); text-align: center;
 }
 .login-logo {
-  width: 64px; height: 64px; margin: 0 auto 1rem;
+  width: 140px; height: 130px; margin: 0 auto 0.5rem;
   display: flex; align-items: center; justify-content: center;
 }
-.login-logo svg { filter: drop-shadow(0 2px 8px rgba(232,118,10,0.3)); }
+.login-logo svg { filter: drop-shadow(0 2px 8px rgba(232,118,10,0.2)); }
 .login-card h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
 .login-subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; }
 .login-card .form-group { text-align: left; margin-bottom: 1rem; }
