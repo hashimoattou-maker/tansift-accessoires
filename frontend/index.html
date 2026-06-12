@@ -95,7 +95,17 @@
               <span class="search-icon">🔍</span>
               <div id="searchResults" class="search-results hidden"></div>
             </div>
-            <button id="themeToggle" class="topbar-btn" title="Mode sombre/clair">🌙</button>
+            <div class="theme-picker">
+              <button id="themeToggle" class="theme-picker-btn" title="Changer de thème">🌙</button>
+              <div id="themeDropdown" class="theme-dropdown">
+                <div class="theme-option" data-theme="classique" onclick="applyTheme('classique')"><span class="theme-dot" style="background:#1a3a5c"></span> Classique</div>
+                <div class="theme-option" data-theme="sombre" onclick="applyTheme('sombre')"><span class="theme-dot" style="background:#1a1d27"></span> Sombre</div>
+                <div class="theme-option" data-theme="vert" onclick="applyTheme('vert')"><span class="theme-dot" style="background:#065f46"></span> Émeraude</div>
+                <div class="theme-option" data-theme="rouge" onclick="applyTheme('rouge')"><span class="theme-dot" style="background:#991b1b"></span> Rouge</div>
+                <div class="theme-option" data-theme="violet" onclick="applyTheme('violet')"><span class="theme-dot" style="background:#5b21b6"></span> Violet</div>
+                <div class="theme-option" data-theme="ocean" onclick="applyTheme('ocean')"><span class="theme-dot" style="background:#115e59"></span> Océan</div>
+              </div>
+            </div>
             <button id="notifBtn" class="topbar-btn notif-btn" title="Notifications">
               🔔 <span id="notifBadge" class="notif-badge hidden">0</span>
             </button>

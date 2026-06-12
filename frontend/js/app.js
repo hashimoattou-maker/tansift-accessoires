@@ -1903,7 +1903,15 @@ function switchParamTab(el, tab) {
             <div class="card-header"><h3>Configuration</h3><button class="btn btn-primary btn-sm" onclick="saveConfiguration()">💾 Enregistrer</button></div>
             <form id="configForm">
               <div class="form-row"><div class="form-group"><label>Couleur charte</label><input name="couleur_charte" type="color" class="form-control" value="${p.couleur_charte||'#1a3a5c'}" style="height:40px;padding:2px"></div>
-              <div class="form-group"><label>Devise</label><select name="devise" class="form-select"><option value="MAD" ${p.devise==='MAD'?'selected':''}>MAD</option><option value="EUR" ${p.devise==='EUR'?'selected':''}>EUR</option><option value="USD" ${p.devise==='USD'?'selected':''}>USD</option></select></div></div>
+              <div class="form-group"><label>Thème</label><select name="theme" class="form-select" onchange="applyTheme(this.value)">
+                <option value="classique" ${(!p.theme||p.theme==='classique')?'selected':''}>🔵 Classique (bleu/orange)</option>
+                <option value="sombre" ${p.theme==='sombre'?'selected':''}>🌙 Sombre</option>
+                <option value="vert" ${p.theme==='vert'?'selected':''}>🌿 Émeraude (vert)</option>
+                <option value="rouge" ${p.theme==='rouge'?'selected':''}>🔴 Rouge</option>
+                <option value="violet" ${p.theme==='violet'?'selected':''}>💜 Violet</option>
+                <option value="ocean" ${p.theme==='ocean'?'selected':''}>🌊 Océan (bleu turquoise)</option>
+              </select></div></div>
+              <div class="form-row"><div class="form-group"><label>Devise</label><select name="devise" class="form-select"><option value="MAD" ${p.devise==='MAD'?'selected':''}>MAD</option><option value="EUR" ${p.devise==='EUR'?'selected':''}>EUR</option><option value="USD" ${p.devise==='USD'?'selected':''}>USD</option></select></div></div>
               <div class="form-row"><div class="form-group"><label>Validité devis (jours)</label><input name="delai_validite_devis" type="number" class="form-control" value="${p.delai_validite_devis||'30'}"></div>
               <div class="form-group"><label>Marge minimale (%)</label><input name="marge_minimale" type="number" class="form-control" value="${p.marge_minimale||'15'}"></div></div>
               <div class="form-row"><div class="form-group"><label>Seuil alerte stock</label><input name="seuil_alerte_stock" type="number" class="form-control" value="${p.seuil_alerte_stock||'10'}"></div>
@@ -2155,13 +2163,24 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('.search-box')) $('#searchResults')?.classList.add('hidden');
 });
 
-// ==================== THEME TOGGLE ====================
-$('#themeToggle')?.addEventListener('click', () => {
-  const theme = document.documentElement.getAttribute('data-theme');
-  const newTheme = theme === 'sombre' ? 'clair' : 'sombre';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  $('#themeToggle').textContent = newTheme === 'sombre' ? '☀️' : '🌙';
-  if (token) { apiFetch('/parametres', { method: 'PUT', body: JSON.stringify({ theme: newTheme }) }).catch(() => {}); }
+// ==================== THEME PICKER ====================
+const themeIcons = { classique: '☀️', sombre: '🌙', vert: '🌿', rouge: '🔴', violet: '💜', ocean: '🌊' };
+
+window.applyTheme = function(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  $('#themeToggle').textContent = themeIcons[theme] || '☀️';
+  $$('.theme-option').forEach(o => o.classList.toggle('active', o.dataset.theme === theme));
+  $('#themeDropdown')?.classList.remove('open');
+  if (token) { apiFetch('/parametres', { method: 'PUT', body: JSON.stringify({ theme }) }).catch(() => {}); }
+};
+
+$('#themeToggle')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('#themeDropdown')?.classList.toggle('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.theme-picker')) $('#themeDropdown')?.classList.remove('open');
 });
 
 // ==================== NOTIFICATIONS ====================
@@ -2232,7 +2251,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       localStorage.setItem('token', token);
       $('#login').classList.add('hidden');
       $('#mainLayout').classList.remove('hidden');
-      $('#themeToggle').textContent = data.user.theme === 'sombre' ? '☀️' : '🌙';
+      $('#themeToggle').textContent = themeIcons[data.user.theme] || '☀️';
+      $$('.theme-option').forEach(o => o.classList.toggle('active', o.dataset.theme === data.user.theme));
       navigate('#dashboard');
       showToast('Connecté en tant que ' + currentUser.nom, 'success');
     } catch (e) {
@@ -2256,7 +2276,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       $('#splash').classList.add('hidden');
       $('#login').classList.add('hidden');
       $('#mainLayout').classList.remove('hidden');
-      $('#themeToggle').textContent = currentUser?.theme === 'sombre' ? '☀️' : '🌙';
+      $('#themeToggle').textContent = themeIcons[currentUser?.theme] || '☀️';
+      $$('.theme-option').forEach(o => o.classList.toggle('active', o.dataset.theme === currentUser?.theme));
       navigate(window.location.hash || '#dashboard');
       return;
     }
