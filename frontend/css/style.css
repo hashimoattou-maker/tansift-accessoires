@@ -199,7 +199,7 @@ a:hover { color: var(--accent); }
   display: flex; align-items: center; gap: 0.6rem;
   text-decoration: none; flex-shrink: 0; min-width: 0;
 }
-.sidebar-logo svg { filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2)); flex-shrink: 0; }
+.sidebar-logo svg { flex-shrink: 0; border-radius: 50%; }
 .sidebar-brand {
   font-size: 0.85rem; font-weight: 700; color: #fff;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
