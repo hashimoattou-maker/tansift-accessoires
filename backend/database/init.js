@@ -176,6 +176,20 @@ async function initializeDatabase() {
     console.warn('Seed warning:', e.message);
   }
 
+  // Recalibrate all client balances on startup
+  try {
+    const { updateClientSolde } = require('../utils/helpers');
+    const clients = rawDb.exec("SELECT id FROM clients WHERE actif = 1");
+    if (clients.length) {
+      for (const row of clients[0].values) {
+        updateClientSolde(dbInstance, row[0]);
+      }
+      console.log(`[init] Soldes ${clients[0].values.length} clients recalibrés.`);
+    }
+  } catch (e) {
+    console.warn('Recalibration soldes:', e.message);
+  }
+
   saveDatabase();
   return dbInstance;
 }

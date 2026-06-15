@@ -19,11 +19,10 @@ function generateDocumentNumber(db, typeDocument) {
 
 function updateClientSolde(db, clientId) {
   const row = db.prepare(`
-    SELECT COALESCE(SUM(CASE WHEN d.type_document IN ('facture_client','avoir_client') THEN d.net_a_payer ELSE 0 END), 0) as total_facture,
-           COALESCE(SUM(p.montant), 0) as total_paye
-    FROM documents d LEFT JOIN paiements_clients p ON p.client_id = d.client_id
-    WHERE d.client_id = ? AND d.statut != 'annule'
-  `).get(clientId);
+    SELECT 
+      (SELECT COALESCE(SUM(net_a_payer), 0) FROM documents WHERE client_id = ? AND type_document IN ('facture_client','avoir_client') AND statut != 'annule') as total_facture,
+      (SELECT COALESCE(SUM(montant), 0) FROM paiements_clients WHERE client_id = ?) as total_paye
+  `).get(clientId, clientId);
   const solde = (row.total_facture || 0) - (row.total_paye || 0);
   db.prepare(`UPDATE clients SET solde_actuel = ? WHERE id = ?`).run(solde, clientId);
   return solde;
