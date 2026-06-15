@@ -765,9 +765,11 @@ async function deleteClient(id) {
     const result = await apiFetch(`/clients/${id}`, { method: 'DELETE' });
     if (result && result.success) {
       showToast('Client supprimé', 'success');
-      const row = document.querySelector(`#cltTableBody tr[onclick*="editClient(${id})"]`)?.closest('tr');
+      const row = document.querySelector(`#cltTableBody tr[onclick*="editClient(${id})"]`)?.closest('tr')
+        || document.querySelector(`#sitTableBody tr[data-id="${id}"]`);
       if (row) row.remove();
       if (typeof loadClients === 'function') await loadClients();
+      if (typeof loadSituation === 'function') await loadSituation();
     }
   } catch (e) { showToast('Erreur: ' + (e.message || 'suppression échouée'), 'error'); }
 }
@@ -845,7 +847,7 @@ async function loadSituation() {
   const filtre = $('#sitFilter')?.value || '';
   try {
     const data = await apiFetch(`/paiements/situation?filtre=${filtre}`);
-    tbody.innerHTML = data?.length ? data.map(c => html`<tr>
+    tbody.innerHTML = data?.length ? data.map(c => html`<tr data-id="${c.id}">
       <td><strong>${c.raison_sociale}</strong></td>
       <td>${c.code_client}</td>
       <td><span class="badge badge-neutral">${c.type_client}</span></td>
