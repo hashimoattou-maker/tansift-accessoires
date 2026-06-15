@@ -836,6 +836,7 @@ function renderSituation(page) {
   window.deletePaiement = deletePaiement;
   window.savePaiement = savePaiement;
   window.updatePaiement = updatePaiement;
+  window.deleteClient = deleteClient;
 }
 
 async function loadSituation() {
@@ -854,6 +855,7 @@ async function loadSituation() {
       <td class="table-actions">
         <button class="btn btn-sm btn-secondary" onclick="showClientSituation(${c.id})">📊</button>
         <button class="btn btn-sm btn-primary" onclick="showPaiementForm(${c.id})">💰</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteClient(${c.id})">🗑️</button>
       </td>
     </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state"><p>Aucun client</p></div></td></tr>';
   } catch { tbody.innerHTML = '<tr><td colspan="7">Erreur</td></tr>'; }
