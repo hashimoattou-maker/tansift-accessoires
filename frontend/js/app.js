@@ -252,14 +252,14 @@ async function renderArticles(page) {
     cats.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`; });
   } catch {}
 
-  loadArticles();
-
   window.showArticleForm = showArticleForm;
   window.loadArticles = loadArticles;
   window.exportArticlesCSV = exportArticlesCSV;
   window.importArticlesCSV = importArticlesCSV;
   window.editArticle = editArticle;
   window.deleteArticle = deleteArticle;
+
+  loadArticles();
 }
 
 async function loadArticles() {
@@ -412,12 +412,16 @@ function editArticle(id) { showArticleForm(id); }
 async function deleteArticle(id) {
   if (!confirm('Supprimer cet article ?')) return;
   try {
-    await apiFetch(`/articles/${id}`, { method: 'DELETE' });
-    showToast('Article supprimé', 'success');
-    const row = document.querySelector(`tr[data-id="${id}"]`);
-    if (row) row.remove();
-    await loadArticles();
-  } catch (e) { showToast(e.message, 'error'); }
+    const result = await apiFetch(`/articles/${id}`, { method: 'DELETE' });
+    if (result && result.success) {
+      showToast('Article supprimé', 'success');
+      const row = document.querySelector(`tr[data-id="${id}"]`);
+      if (row) row.remove();
+      if (typeof loadArticles === 'function') await loadArticles();
+    }
+  } catch (e) {
+    showToast('Erreur: ' + (e.message || 'suppression échouée'), 'error');
+  }
 }
 
 function showArticleDetail(id) {

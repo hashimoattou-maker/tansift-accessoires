@@ -14,6 +14,7 @@ module.exports = function(db) {
     if (categorie_id) { sql += ` AND a.categorie_id = ?`; params.push(categorie_id); }
     if (type) { sql += ` AND a.type_article = ?`; params.push(type); }
     if (actif !== undefined) { sql += ` AND a.actif = ?`; params.push(actif); }
+    else { sql += ` AND a.actif = 1`; }
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const total = db.prepare(`SELECT COUNT(*) as total FROM (${sql})`).get(...params);
@@ -67,9 +68,16 @@ module.exports = function(db) {
 
   // DELETE /api/articles/:id
   router.delete('/:id', (req, res) => {
-    db.prepare(`UPDATE articles SET actif = 0 WHERE id = ?`).run(req.params.id);
-    auditLog(db, req.user?.id, 'SUPPRESSION', 'article', req.params.id, {});
-    res.json({ success: true });
+    try {
+      const article = db.prepare(`SELECT id FROM articles WHERE id = ?`).get(req.params.id);
+      if (!article) return res.status(404).json({ error: 'Article introuvable' });
+      db.prepare(`UPDATE articles SET actif = 0 WHERE id = ?`).run(req.params.id);
+      auditLog(db, req.user?.id, 'SUPPRESSION', 'article', req.params.id, {});
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Erreur suppression article:', e);
+      res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
   });
 
   // POST /api/articles/:id/compatibilite
