@@ -490,6 +490,8 @@ function renderMoteurs(page) {
     <div id="moteurList" class="grid grid-3"></div>
   `;
   loadMoteurs();
+  window.showMoteurForm = showMoteurForm;
+  window.showMoteurDetail = showMoteurDetail;
 }
 
 async function loadMoteurs() {
