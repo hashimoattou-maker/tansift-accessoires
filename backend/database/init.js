@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const DB_PATH = path.join(__dirname, '..', '..', 'data', 'tansift.db');
+const DB_BACKUP = path.join(__dirname, '..', '..', 'data', 'tansift.backup.db');
 
 function sanitizeParams(params) {
   if (Array.isArray(params)) {
@@ -126,6 +127,11 @@ async function initializeDatabase() {
   let buffer = null;
   if (exists) {
     buffer = fs.readFileSync(DB_PATH);
+  } else if (fs.existsSync(DB_BACKUP)) {
+    // Main DB lost (deploy reset), restore from backup
+    console.log('[init] Fichier DB introuvable, restauration depuis backup...');
+    buffer = fs.readFileSync(DB_BACKUP);
+    fs.writeFileSync(DB_PATH, buffer);
   }
 
   const rawDb = new SQL.Database(buffer);
@@ -179,6 +185,8 @@ function saveDatabase() {
   const data = dbInstance.export();
   const buffer = Buffer.from(data);
   fs.writeFileSync(DB_PATH, buffer);
+  // Auto-backup every save
+  try { fs.writeFileSync(DB_BACKUP, buffer); } catch (e) {}
 }
 
 function getDatabase() {
@@ -189,6 +197,12 @@ async function seedData() {
   const bcrypt = require('bcryptjs');
   const adminPassword = bcrypt.hashSync('admin123', 10);
   dbInstance.run(`UPDATE utilisateurs SET mot_de_passe = ? WHERE email = ?`, [adminPassword, 'admin@tansift.ma']);
+
+  const existingArticles = dbInstance.prepare(`SELECT COUNT(*) as cnt FROM articles`).get();
+  if (existingArticles && existingArticles.cnt > 0) {
+    console.log(`[seed] ${existingArticles.cnt} articles existent déjà, seed ignoré.`);
+    return;
+  }
 
   const articlesDemo = [
     { ref: 'FRE-001', des: 'Plaquettes de frein avant PREMIUM', cat: 1, pa: 120, pv: 250, stock: 50, min: 10, max: 100, eml: 'A-01-01' },
@@ -206,13 +220,13 @@ async function seedData() {
   ];
 
   for (const a of articlesDemo) {
-    dbInstance.run(`INSERT INTO articles (reference, designation, categorie_id, prix_achat_ht, prix_vente_ht, stock_actuel, stock_min, stock_max, emplacement) VALUES (?,?,?,?,?,?,?,?,?)`,
+    dbInstance.run(`INSERT OR IGNORE INTO articles (reference, designation, categorie_id, prix_achat_ht, prix_vente_ht, stock_actuel, stock_min, stock_max, emplacement) VALUES (?,?,?,?,?,?,?,?,?)`,
       [a.ref, a.des, a.cat, a.pa, a.pv, a.stock, a.min, a.max, a.eml]);
   }
 
-  dbInstance.run(`INSERT INTO articles_compatibilites (article_id, marque, modele, motorisation, annee_debut, annee_fin) VALUES (?,?,?,?,?,?)`, [1, 'Renault', 'Clio III', '1.5 dCi', 2005, 2014]);
-  dbInstance.run(`INSERT INTO articles_compatibilites (article_id, marque, modele, motorisation, annee_debut, annee_fin) VALUES (?,?,?,?,?,?)`, [1, 'Peugeot', '208', '1.6 HDi', 2012, 2020]);
-  dbInstance.run(`INSERT INTO articles_compatibilites (article_id, marque, modele, motorisation, annee_debut, annee_fin) VALUES (?,?,?,?,?,?)`, [5, 'Dacia', 'Sandero', '1.0 SCe', 2016, 2024]);
+  dbInstance.run(`INSERT OR IGNORE INTO articles_compatibilites (article_id, marque, modele, motorisation, annee_debut, annee_fin) VALUES (?,?,?,?,?,?)`, [1, 'Renault', 'Clio III', '1.5 dCi', 2005, 2014]);
+  dbInstance.run(`INSERT OR IGNORE INTO articles_compatibilites (article_id, marque, modele, motorisation, annee_debut, annee_fin) VALUES (?,?,?,?,?,?)`, [1, 'Peugeot', '208', '1.6 HDi', 2012, 2020]);
+  dbInstance.run(`INSERT OR IGNORE INTO articles_compatibilites (article_id, marque, modele, motorisation, annee_debut, annee_fin) VALUES (?,?,?,?,?,?)`, [5, 'Dacia', 'Sandero', '1.0 SCe', 2016, 2024]);
 
   const clientsDemo = [
     { code: 'CLT-001', type: 'Garage', nom: 'Garage ALAMI', tel: '0612345678', email: 'alami@email.ma', ville: 'Casablanca', ice: '12345678', rc: '123456' },
@@ -223,7 +237,7 @@ async function seedData() {
   ];
 
   for (const c of clientsDemo) {
-    dbInstance.run(`INSERT INTO clients (code_client, type_client, raison_sociale, telephone, email, ville, ice, rc) VALUES (?,?,?,?,?,?,?,?)`,
+    dbInstance.run(`INSERT OR IGNORE INTO clients (code_client, type_client, raison_sociale, telephone, email, ville, ice, rc) VALUES (?,?,?,?,?,?,?,?)`,
       [c.code, c.type, c.nom, c.tel, c.email, c.ville, c.ice || null, c.rc || null]);
   }
 
@@ -234,7 +248,7 @@ async function seedData() {
   ];
 
   for (const f of fournisseursDemo) {
-    dbInstance.run(`INSERT INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, ville, delai_livraison_jours, evaluation) VALUES (?,?,?,?,?,?,?)`,
+    dbInstance.run(`INSERT OR IGNORE INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, ville, delai_livraison_jours, evaluation) VALUES (?,?,?,?,?,?,?)`,
       [f.code, f.nom, f.tel, f.email, f.ville, f.delai, f.eval]);
   }
 }

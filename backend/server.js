@@ -61,6 +61,12 @@ function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`✓ Serveur Accessoires Tensift démarré sur http://0.0.0.0:${PORT}`);
   });
+
+  // Save DB on shutdown
+  const shutdown = () => { console.log('Sauvegarde DB avant arrêt...'); saveDatabase(); process.exit(0); };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+  process.on('exit', saveDatabase);
 }
 
 // Initialize database
