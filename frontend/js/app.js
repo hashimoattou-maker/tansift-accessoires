@@ -283,7 +283,7 @@ async function loadArticles() {
 
     tbody.innerHTML = articles.length ? articles.map(a => {
       const stockCls = a.stock_actuel <= 0 ? 'badge-danger' : a.stock_actuel <= a.stock_min ? 'badge-warning' : 'badge-success';
-      return html`<tr>
+      return html`<tr data-id="${a.id}">
         <td><strong>${a.reference}</strong></td>
         <td>${a.designation}</td>
         <td><span class="badge badge-neutral">${a.categorie_nom || '-'}</span></td>
@@ -413,8 +413,10 @@ async function deleteArticle(id) {
   if (!confirm('Supprimer cet article ?')) return;
   try {
     await apiFetch(`/articles/${id}`, { method: 'DELETE' });
-    showToast('Article désactivé', 'success');
-    loadArticles();
+    showToast('Article supprimé', 'success');
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) row.remove();
+    await loadArticles();
   } catch (e) { showToast(e.message, 'error'); }
 }
 

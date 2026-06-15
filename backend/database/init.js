@@ -149,6 +149,17 @@ async function initializeDatabase() {
 
   dbInstance = new Database(rawDb);
 
+  // Migrations: add missing columns
+  const migrations = [
+    `ALTER TABLE articles ADD COLUMN actif INTEGER DEFAULT 1`,
+    `ALTER TABLE articles ADD COLUMN est_moteur INTEGER DEFAULT 0`,
+    `ALTER TABLE articles ADD COLUMN moteur_complet INTEGER DEFAULT 1`,
+    `ALTER TABLE articles ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`,
+  ];
+  for (const m of migrations) {
+    try { rawDb.run(m); } catch (e) {}
+  }
+
   try {
     await seedData();
   } catch (e) {
