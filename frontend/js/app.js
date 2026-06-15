@@ -658,6 +658,7 @@ function renderClients(page) {
   window.loadClients = loadClients;
   window.editClient = editClient;
   window.showClientDetail = showClientDetail;
+  window.deleteClient = deleteClient;
 }
 
 async function loadClients() {
@@ -682,6 +683,7 @@ async function loadClients() {
         <button class="btn btn-sm btn-secondary" onclick="editClient(${c.id})">✏️</button>
         <button class="btn btn-sm btn-secondary" onclick="showClientDetail(${c.id})">👁️</button>
         <button class="btn btn-sm btn-success" onclick="quickSale(${c.id})">🛒</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteClient(${c.id})">🗑️</button>
       </td>
     </tr>`).join('') : '<tr><td colspan="8"><div class="empty-state"><p>Aucun client</p></div></td></tr>';
   } catch { tbody.innerHTML = '<tr><td colspan="8">Erreur</td></tr>'; }
@@ -754,6 +756,19 @@ async function saveClient(e, id) {
 }
 
 function editClient(id) { showClientForm(id); }
+
+async function deleteClient(id) {
+  if (!confirm('Supprimer ce client ?')) return;
+  try {
+    const result = await apiFetch(`/clients/${id}`, { method: 'DELETE' });
+    if (result && result.success) {
+      showToast('Client supprimé', 'success');
+      const row = document.querySelector(`#cltTableBody tr[onclick*="editClient(${id})"]`)?.closest('tr');
+      if (row) row.remove();
+      if (typeof loadClients === 'function') await loadClients();
+    }
+  } catch (e) { showToast('Erreur: ' + (e.message || 'suppression échouée'), 'error'); }
+}
 
 function showClientDetail(id) {
   apiFetch(`/clients/${id}`).then(c => {
@@ -931,6 +946,9 @@ function renderFournisseurs(page) {
   loadFournisseurs();
   window.showFournisseurForm = showFournisseurForm;
   window.loadFournisseurs = loadFournisseurs;
+  window.editFournisseur = editFournisseur;
+  window.showFournisseurDetail = showFournisseurDetail;
+  window.deleteFournisseur = deleteFournisseur;
 }
 
 async function loadFournisseurs() {
@@ -949,6 +967,7 @@ async function loadFournisseurs() {
       <td class="table-actions">
         <button class="btn btn-sm btn-secondary" onclick="editFournisseur(${f.id})">✏️</button>
         <button class="btn btn-sm btn-secondary" onclick="showFournisseurDetail(${f.id})">👁️</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteFournisseur(${f.id})">🗑️</button>
       </td>
     </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state"><p>Aucun fournisseur</p></div></td></tr>';
   } catch { tbody.innerHTML = '<tr><td colspan="7">Erreur</td></tr>'; }
@@ -1013,6 +1032,20 @@ async function saveFournisseur(e, id) {
 }
 
 function editFournisseur(id) { showFournisseurForm(id); }
+
+async function deleteFournisseur(id) {
+  if (!confirm('Supprimer ce fournisseur ?')) return;
+  try {
+    const result = await apiFetch(`/fournisseurs/${id}`, { method: 'DELETE' });
+    if (result && result.success) {
+      showToast('Fournisseur supprimé', 'success');
+      const row = document.querySelector(`#frnTableBody tr[onclick*="editFournisseur(${id})"]`)?.closest('tr');
+      if (row) row.remove();
+      if (typeof loadFournisseurs === 'function') await loadFournisseurs();
+    }
+  } catch (e) { showToast('Erreur: ' + (e.message || 'suppression échouée'), 'error'); }
+}
+
 function showFournisseurDetail(id) {
   apiFetch(`/fournisseurs/${id}`).then(f => {
     openModal(`Fournisseur: ${f.raison_sociale}`, html`

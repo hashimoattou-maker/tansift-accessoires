@@ -6,7 +6,7 @@ module.exports = function(db) {
   // GET /api/clients
   router.get('/', (req, res) => {
     const { search, type, page = 1, limit = 50 } = req.query;
-    let sql = `SELECT * FROM clients WHERE 1=1`;
+    let sql = `SELECT * FROM clients WHERE actif = 1`;
     const params = [];
     if (search) { sql += ` AND (raison_sociale LIKE ? OR code_client LIKE ? OR telephone LIKE ?)`; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
     if (type) { sql += ` AND type_client = ?`; params.push(type); }
@@ -53,6 +53,20 @@ module.exports = function(db) {
 
     auditLog(db, req.user?.id, 'MODIFICATION', 'client', req.params.id, {});
     res.json({ success: true });
+  });
+
+  // DELETE /api/clients/:id
+  router.delete('/:id', (req, res) => {
+    try {
+      const client = db.prepare(`SELECT id FROM clients WHERE id = ?`).get(req.params.id);
+      if (!client) return res.status(404).json({ error: 'Client introuvable' });
+      db.prepare(`UPDATE clients SET actif = 0 WHERE id = ?`).run(req.params.id);
+      auditLog(db, req.user?.id, 'SUPPRESSION', 'client', req.params.id, {});
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Erreur suppression client:', e);
+      res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
   });
 
   // POST /api/clients/:id/vehicule

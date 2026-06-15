@@ -5,7 +5,7 @@ const { auditLog } = require('../utils/helpers');
 module.exports = function(db) {
   router.get('/', (req, res) => {
     const { search, page = 1, limit = 50 } = req.query;
-    let sql = `SELECT * FROM fournisseurs WHERE 1=1`;
+    let sql = `SELECT * FROM fournisseurs WHERE actif = 1`;
     const params = [];
     if (search) { sql += ` AND (raison_sociale LIKE ? OR code_fournisseur LIKE ?)`; params.push(`%${search}%`, `%${search}%`); }
     const total = db.prepare(`SELECT COUNT(*) as total FROM (${sql})`).get(...params);
@@ -37,6 +37,20 @@ module.exports = function(db) {
     db.prepare(`UPDATE fournisseurs SET raison_sociale=?, telephone=?, email=?, adresse=?, ville=?, ice=?, rc=?, delai_livraison_jours=?, banque=?, rib=?, evaluation=? WHERE id=?`)
       .run(raison_sociale || existing.raison_sociale, telephone || existing.telephone, email || existing.email, adresse || existing.adresse, ville || existing.ville, ice || existing.ice, rc || existing.rc, delai_livraison_jours || existing.delai_livraison_jours, banque || existing.banque, rib || existing.rib, evaluation !== undefined ? evaluation : existing.evaluation, req.params.id);
     res.json({ success: true });
+  });
+
+  // DELETE /api/fournisseurs/:id
+  router.delete('/:id', (req, res) => {
+    try {
+      const frn = db.prepare(`SELECT id FROM fournisseurs WHERE id = ?`).get(req.params.id);
+      if (!frn) return res.status(404).json({ error: 'Fournisseur introuvable' });
+      db.prepare(`UPDATE fournisseurs SET actif = 0 WHERE id = ?`).run(req.params.id);
+      auditLog(db, req.user?.id, 'SUPPRESSION', 'fournisseur', req.params.id, {});
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Erreur suppression fournisseur:', e);
+      res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
   });
 
   return router;

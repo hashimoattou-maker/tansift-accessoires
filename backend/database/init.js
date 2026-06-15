@@ -155,6 +155,10 @@ async function initializeDatabase() {
     `ALTER TABLE articles ADD COLUMN est_moteur INTEGER DEFAULT 0`,
     `ALTER TABLE articles ADD COLUMN moteur_complet INTEGER DEFAULT 1`,
     `ALTER TABLE articles ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`,
+    `ALTER TABLE clients ADD COLUMN actif INTEGER DEFAULT 1`,
+    `ALTER TABLE clients ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`,
+    `ALTER TABLE fournisseurs ADD COLUMN actif INTEGER DEFAULT 1`,
+    `ALTER TABLE fournisseurs ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`,
   ];
   for (const m of migrations) {
     try { rawDb.run(m); } catch (e) {}
