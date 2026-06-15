@@ -48,5 +48,39 @@ module.exports = function(db) {
     res.json(paiement);
   });
 
+  // PUT /api/paiements/:id
+  router.put('/:id', (req, res) => {
+    try {
+      const existing = db.prepare(`SELECT * FROM paiements_clients WHERE id = ?`).get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Paiement introuvable' });
+      const { montant, mode_paiement, reference, numero_cheque, banque_emetteur, notes, date_paiement } = req.body;
+      db.prepare(`UPDATE paiements_clients SET montant=?, mode_paiement=?, reference=?, numero_cheque=?, banque_emetteur=?, notes=?, date_paiement=? WHERE id=?`)
+        .run(montant !== undefined ? montant : existing.montant, mode_paiement || existing.mode_paiement, reference !== undefined ? reference : existing.reference, numero_cheque !== undefined ? numero_cheque : existing.numero_cheque, banque_emetteur !== undefined ? banque_emetteur : existing.banque_emetteur, notes !== undefined ? notes : existing.notes, date_paiement || existing.date_paiement, req.params.id);
+      const { updateClientSolde } = require('../utils/helpers');
+      updateClientSolde(db, existing.client_id);
+      auditLog(db, req.user?.id, 'MODIFICATION', 'paiement_client', req.params.id, { montant, ancien_montant: existing.montant });
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Erreur modification paiement:', e);
+      res.status(500).json({ error: 'Erreur lors de la modification' });
+    }
+  });
+
+  // DELETE /api/paiements/:id
+  router.delete('/:id', (req, res) => {
+    try {
+      const existing = db.prepare(`SELECT * FROM paiements_clients WHERE id = ?`).get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Paiement introuvable' });
+      db.prepare(`DELETE FROM paiements_clients WHERE id = ?`).run(req.params.id);
+      const { updateClientSolde } = require('../utils/helpers');
+      updateClientSolde(db, existing.client_id);
+      auditLog(db, req.user?.id, 'SUPPRESSION', 'paiement_client', req.params.id, { montant: existing.montant, client_id: existing.client_id });
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Erreur suppression paiement:', e);
+      res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
+  });
+
   return router;
 };

@@ -832,6 +832,10 @@ function renderSituation(page) {
   window.loadSituation = loadSituation;
   window.showClientSituation = showClientSituation;
   window.exportSoldes = exportSoldes;
+  window.editPaiement = editPaiement;
+  window.deletePaiement = deletePaiement;
+  window.savePaiement = savePaiement;
+  window.updatePaiement = updatePaiement;
 }
 
 async function loadSituation() {
@@ -865,21 +869,23 @@ function showClientSituation(clientId) {
         <div class="stat-item"><div class="stat-value">${((c.solde_actuel / (c.plafond_credit||1)) * 100).toFixed(0)}%</div><div class="stat-label">Utilisation</div></div>
       </div>
       <h4 style="margin:1rem 0 0.5rem">Écritures</h4>
-      <table><thead><tr><th>Date</th><th>Document</th><th>Débit</th><th>Crédit</th><th>Solde</th></tr></thead><tbody>
+      <table><thead><tr><th>Date</th><th>Document</th><th>Débit</th><th>Crédit</th><th>Solde</th><th>Actions</th></tr></thead><tbody>
     `;
     // Compile a simple ledger from documents + payments
     const docs = c.documents || [];
     const payments = paiements?.paiements || [];
     const entries = [
       ...docs.filter(d => ['facture_client','avoir_client'].includes(d.type_document)).map(d => ({ date: d.date_document, ref: d.numero, type: d.type_document === 'facture_client' ? 'debit' : 'credit', montant: d.net_a_payer || 0 })),
-      ...payments.map(p => ({ date: p.date_paiement, ref: 'Paiement ' + (p.mode_paiement||''), type: 'credit', montant: p.montant }))
+      ...payments.map(p => ({ date: p.date_paiement, ref: 'Paiement ' + (p.mode_paiement||''), type: 'credit', montant: p.montant, paiement_id: p.id }))
     ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
     let running = 0;
     htmlContent += entries.length ? entries.map(e => {
       running += e.type === 'debit' ? e.montant : -e.montant;
-      return html`<tr><td>${formatDate(e.date)}</td><td>${e.ref}</td><td>${e.type === 'debit' ? formatCurrency(e.montant) : '-'}</td><td>${e.type === 'credit' ? formatCurrency(e.montant) : '-'}</td><td><strong>${formatCurrency(running)}</strong></td></tr>`;
-    }).join('') : '<tr><td colspan="5">Aucune écriture</td></tr>';
+      const isPaiement = e.type === 'credit' && e.paiement_id;
+      const actions = isPaiement ? html`<span style="white-space:nowrap"><button class="btn btn-sm btn-secondary" onclick="editPaiement(${e.paiement_id})" title="Modifier">✏️</button> <button class="btn btn-sm btn-danger" onclick="deletePaiement(${e.paiement_id})" title="Supprimer">🗑️</button></span>` : '';
+      return html`<tr><td>${formatDate(e.date)}</td><td>${e.ref}</td><td>${e.type === 'debit' ? formatCurrency(e.montant) : '-'}</td><td>${e.type === 'credit' ? formatCurrency(e.montant) : '-'}</td><td><strong>${formatCurrency(running)}</strong></td><td>${actions}</td></tr>`;
+    }).join('') : '<tr><td colspan="6">Aucune écriture</td></tr>';
     htmlContent += '</tbody></table>';
 
     openModal(`Situation: ${c.raison_sociale}`, htmlContent, `<button class="btn btn-primary btn-sm" onclick="showPaiementForm(${c.id});closeModal()">💰 Enregistrer paiement</button><button class="btn btn-secondary" onclick="closeModal()">Fermer</button>`);
@@ -919,6 +925,53 @@ async function savePaiement(e) {
     closeModal();
     loadSituation();
   } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function editPaiement(id) {
+  try {
+    const p = await apiFetch(`/paiements/${id}`);
+    if (!p) return;
+    openModal('Modifier paiement', html`
+      <form id="editPaiementForm" onsubmit="updatePaiement(event, ${id})">
+        <div class="form-group"><label>Client</label><input class="form-control" value="${p.client_nom}" readonly></div>
+        <div class="form-row"><div class="form-group"><label>Montant *</label><input name="montant" type="number" step="0.01" class="form-control" value="${p.montant}" required></div>
+        <div class="form-group"><label>Date</label><input name="date_paiement" type="date" class="form-control" value="${p.date_paiement}"></div></div>
+        <div class="form-group"><label>Mode de paiement</label><select name="mode_paiement" class="form-select">
+          <option value="Especes" ${p.mode_paiement==='Especes'?'selected':''}>Espèces</option><option value="Cheque" ${p.mode_paiement==='Cheque'?'selected':''}>Chèque</option><option value="Virement" ${p.mode_paiement==='Virement'?'selected':''}>Virement</option>
+          <option value="TPE" ${p.mode_paiement==='TPE'?'selected':''}>TPE</option><option value="Traite" ${p.mode_paiement==='Traite'?'selected':''}>Traite</option><option value="Autre" ${p.mode_paiement==='Autre'?'selected':''}>Autre</option>
+        </select></div>
+        <div class="form-row"><div class="form-group"><label>Référence</label><input name="reference" class="form-control" value="${p.reference||''}"></div>
+        <div class="form-group"><label>N° Chèque</label><input name="numero_cheque" class="form-control" value="${p.numero_cheque||''}"></div></div>
+        <div class="form-group"><label>Banque émettrice</label><input name="banque_emetteur" class="form-control" value="${p.banque_emetteur||''}"></div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea">${p.notes||''}</textarea></div>
+      </form>
+    `, `<button class="btn btn-secondary" onclick="closeModal()">Annuler</button><button class="btn btn-primary" onclick="document.getElementById('editPaiementForm').requestSubmit()">Enregistrer</button>`);
+  } catch (e) { showToast('Erreur chargement paiement', 'error'); }
+}
+
+async function updatePaiement(e, id) {
+  e.preventDefault();
+  const form = $('#editPaiementForm');
+  const data = Object.fromEntries(new FormData(form));
+  data.montant = parseFloat(data.montant) || 0;
+  if (data.montant <= 0) { showToast('Montant invalide', 'error'); return; }
+  try {
+    await apiFetch(`/paiements/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    showToast('Paiement modifié', 'success');
+    closeModal();
+    loadSituation();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deletePaiement(id) {
+  if (!confirm('Supprimer ce paiement ?')) return;
+  try {
+    const result = await apiFetch(`/paiements/${id}`, { method: 'DELETE' });
+    if (result && result.success) {
+      showToast('Paiement supprimé', 'success');
+      loadSituation();
+    }
+  } catch (e) { showToast('Erreur: ' + (e.message || 'suppression échouée'), 'error'); }
 }
 
 function exportSoldes() {
