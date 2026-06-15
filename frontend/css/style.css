@@ -545,6 +545,7 @@ tbody tr:hover { background: var(--bg); }
 
 /* ==================== PRINT ==================== */
 @media print {
+  @page { margin: 0 !important; }
   #sidebar, #topbar, .btn, .table-actions, .filters-bar, .card-actions { display: none !important; }
   #mainContent { margin-left: 0 !important; }
   #pageContent { padding: 0 !important; }

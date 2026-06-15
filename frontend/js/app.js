@@ -1621,7 +1621,7 @@ function printDocument(id) {
       `
     };
 
-    win.document.write(`<html><head><meta charset="utf-8"><title>${societe.nom} — ${d.numero}</title>${templates[modele] || templates.classique}</head><body></body></html>`);
+    win.document.write(`<html><head><meta charset="utf-8"><title>${societe.nom} — ${d.numero}</title><style>@page{margin:0!important}</style>${templates[modele] || templates.classique}</head><body></body></html>`);
     win.document.close();
     setTimeout(() => { win.print(); }, 600);
   });
