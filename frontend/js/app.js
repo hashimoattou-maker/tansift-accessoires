@@ -2233,10 +2233,14 @@ $('#globalSearch')?.addEventListener('input', function() {
   if (q.length < 2) { $('#searchResults')?.classList.add('hidden'); return; }
   searchTimeout = setTimeout(async () => {
     try {
-      const [articles, clients] = await Promise.all([
-        apiFetch(`/articles?limit=5&search=${encodeURIComponent(q)}`),
-        apiFetch(`/clients?limit=5&search=${encodeURIComponent(q)}`)
-      ]);
+      const isSituation = currentRoute === 'situation';
+      const fetches = isSituation
+        ? [Promise.resolve(null), apiFetch(`/clients?limit=10&search=${encodeURIComponent(q)}`)]
+        : [
+            apiFetch(`/articles?limit=5&search=${encodeURIComponent(q)}`),
+            apiFetch(`/clients?limit=5&search=${encodeURIComponent(q)}`)
+          ];
+      const [articles, clients] = await Promise.all(fetches);
       const results = $('#searchResults');
       let htmlContent = '';
       if (articles?.articles?.length) {
@@ -2247,7 +2251,11 @@ $('#globalSearch')?.addEventListener('input', function() {
       }
       if (clients?.clients?.length) {
         clients.clients.forEach(c => {
-          htmlContent += `<div class="sr-item" onclick="$('#searchResults')?.classList.add('hidden');$('#globalSearch').value='';window._searchClientId=${c.id};navigate('situation');setTimeout(()=>showClientSituation(${c.id}),300)"><span>👤</span><span class="sr-name">${c.raison_sociale}</span><span class="sr-ref">${c.code_client}</span></div>`;
+          if (isSituation) {
+            htmlContent += `<div class="sr-item" onclick="$('#searchResults')?.classList.add('hidden');$('#globalSearch').value='';showClientSituation(${c.id})"><span>👤</span><span class="sr-name">${c.raison_sociale}</span><span class="sr-ref">${c.code_client}</span></div>`;
+          } else {
+            htmlContent += `<div class="sr-item" onclick="navigate('situation');setTimeout(()=>showClientSituation(${c.id}),300)"><span>👤</span><span class="sr-name">${c.raison_sociale}</span><span class="sr-ref">${c.code_client}</span></div>`;
+          }
         });
       }
       if (!htmlContent) htmlContent = '<div class="sr-item" style="color:var(--text-light)">Aucun résultat</div>';
