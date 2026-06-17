@@ -24,7 +24,15 @@ module.exports = function(db) {
   router.post('/', (req, res) => {
     const { raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement } = req.body;
     if (!raison_sociale) return res.status(400).json({ error: 'Raison sociale requise' });
-    const code = `FRN-${String(Date.now()).slice(-6)}`;
+    const last = db.prepare(`SELECT code_fournisseur FROM fournisseurs ORDER BY id DESC LIMIT 1`).get();
+    let nextNum = 1;
+    if (last && last.code_fournisseur && last.code_fournisseur.startsWith('FR-4411')) {
+      nextNum = parseInt(last.code_fournisseur.slice(-4)) + 1;
+    } else {
+      const count = db.prepare(`SELECT COUNT(*) as cnt FROM fournisseurs`).get();
+      nextNum = (count?.cnt || 0) + 1;
+    }
+    const code = `FR-4411${String(nextNum).padStart(4, '0')}`;
     const result = db.prepare(`INSERT INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(code, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours || 15, banque, rib, conditions_paiement || '60 jours');
     res.status(201).json({ id: result.lastInsertRowid, code_fournisseur: code });

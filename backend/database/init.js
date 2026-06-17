@@ -243,11 +243,11 @@ async function seedData() {
   dbInstance.run(`INSERT OR IGNORE INTO articles_compatibilites (article_id, marque, modele, motorisation, annee_debut, annee_fin) VALUES (?,?,?,?,?,?)`, [5, 'Dacia', 'Sandero', '1.0 SCe', 2016, 2024]);
 
   const clientsDemo = [
-    { code: 'CLT-001', type: 'Garage', nom: 'Garage ALAMI', tel: '0612345678', email: 'alami@email.ma', ville: 'Casablanca', ice: '12345678', rc: '123456' },
-    { code: 'CLT-002', type: 'Particulier', nom: 'Ahmed BENCHARKA', tel: '0698765432', email: 'bencharka@email.ma', ville: 'Rabat' },
-    { code: 'CLT-003', type: 'Concessionnaire', nom: 'Auto Prestige SARL', tel: '0522123456', email: 'contact@autoprestige.ma', ville: 'Marrakech', ice: '87654321', rc: '654321' },
-    { code: 'CLT-004', type: 'Professionnel', nom: 'Transports RAPIDO', tel: '0522987654', email: 'info@rapido.ma', ville: 'Tanger', ice: '45678912' },
-    { code: 'CLT-005', type: 'Garage', nom: 'Garage MODERNE', tel: '0655112233', email: 'garage.moderne@email.ma', ville: 'Fès' },
+    { code: 'CLT-34210001', type: 'Garage', nom: 'Garage ALAMI', tel: '0612345678', email: 'alami@email.ma', ville: 'Casablanca', ice: '12345678', rc: '123456' },
+    { code: 'CLT-34210002', type: 'Particulier', nom: 'Ahmed BENCHARKA', tel: '0698765432', email: 'bencharka@email.ma', ville: 'Rabat' },
+    { code: 'CLT-34210003', type: 'Concessionnaire', nom: 'Auto Prestige SARL', tel: '0522123456', email: 'contact@autoprestige.ma', ville: 'Marrakech', ice: '87654321', rc: '654321' },
+    { code: 'CLT-34210004', type: 'Professionnel', nom: 'Transports RAPIDO', tel: '0522987654', email: 'info@rapido.ma', ville: 'Tanger', ice: '45678912' },
+    { code: 'CLT-34210005', type: 'Garage', nom: 'Garage MODERNE', tel: '0655112233', email: 'garage.moderne@email.ma', ville: 'Fès' },
   ];
 
   for (const c of clientsDemo) {
@@ -256,9 +256,9 @@ async function seedData() {
   }
 
   const fournisseursDemo = [
-    { code: 'FRN-001', nom: 'Parts Automotive Europe', tel: '0522111111', email: 'info@parts-eu.com', ville: 'Casablanca', delai: 30, eval: 4 },
-    { code: 'FRN-002', nom: 'Pièces Auto Maroc', tel: '0522222222', email: 'contact@piecesauto.ma', ville: 'Casablanca', delai: 7, eval: 5 },
-    { code: 'FRN-003', nom: 'Import Car Distribution', tel: '0522333333', email: 'commandes@icd.ma', ville: 'Tanger', delai: 45, eval: 3 },
+    { code: 'FR-44110001', nom: 'Parts Automotive Europe', tel: '0522111111', email: 'info@parts-eu.com', ville: 'Casablanca', delai: 30, eval: 4 },
+    { code: 'FR-44110002', nom: 'Pièces Auto Maroc', tel: '0522222222', email: 'contact@piecesauto.ma', ville: 'Casablanca', delai: 7, eval: 5 },
+    { code: 'FR-44110003', nom: 'Import Car Distribution', tel: '0522333333', email: 'commandes@icd.ma', ville: 'Tanger', delai: 45, eval: 3 },
   ];
 
   for (const f of fournisseursDemo) {

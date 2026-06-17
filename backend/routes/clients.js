@@ -34,7 +34,15 @@ module.exports = function(db) {
     const { type_client, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement, plafond_credit, remise_defaut, note } = req.body;
     if (!raison_sociale) return res.status(400).json({ error: 'Raison sociale requise' });
 
-    const code = `CLT-${String(Date.now()).slice(-6)}`;
+    const last = db.prepare(`SELECT code_client FROM clients ORDER BY id DESC LIMIT 1`).get();
+    let nextNum = 1;
+    if (last && last.code_client && last.code_client.startsWith('CLT-3421')) {
+      nextNum = parseInt(last.code_client.slice(-4)) + 1;
+    } else {
+      const count = db.prepare(`SELECT COUNT(*) as cnt FROM clients`).get();
+      nextNum = (count?.cnt || 0) + 1;
+    }
+    const code = `CLT-3421${String(nextNum).padStart(4, '0')}`;
     const result = db.prepare(`INSERT INTO clients (code_client, type_client, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement, plafond_credit, remise_defaut, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(code, type_client || 'Particulier', raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement || '30 jours', plafond_credit || 0, remise_defaut || 0, note);
 
