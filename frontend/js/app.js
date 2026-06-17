@@ -2247,7 +2247,7 @@ $('#globalSearch')?.addEventListener('input', function() {
       }
       if (clients?.clients?.length) {
         clients.clients.forEach(c => {
-          htmlContent += `<div class="sr-item" onclick="navigate('clients')"><span>👤</span><span class="sr-name">${c.raison_sociale}</span><span class="sr-ref">${c.code_client}</span></div>`;
+          htmlContent += `<div class="sr-item" onclick="$('#searchResults')?.classList.add('hidden');$('#globalSearch').value='';window._searchClientId=${c.id};navigate('situation');setTimeout(()=>showClientSituation(${c.id}),300)"><span>👤</span><span class="sr-name">${c.raison_sociale}</span><span class="sr-ref">${c.code_client}</span></div>`;
         });
       }
       if (!htmlContent) htmlContent = '<div class="sr-item" style="color:var(--text-light)">Aucun résultat</div>';
