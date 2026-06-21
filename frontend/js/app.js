@@ -1795,7 +1795,7 @@ async function printBulkLabels() {
       body{font-family:Arial,sans-serif;padding:10px}
       .label{display:inline-block;border:1px dashed #ccc;padding:10px;margin:5px;text-align:center;width:200px}
       .label strong{display:block;font-size:12px}
-      .label .price{color:#e8760a;font-weight:bold;font-size:14px}
+      .label .price{color:#2563eb;font-weight:bold;font-size:14px}
       @media print{@page{margin:5mm}}
     </style></head><body>
     <div>${data.labels.map(l => `<div class="label"><strong>${l.reference}</strong><span style="font-size:10px;display:block">${l.designation}</span><div class="price">${formatCurrency(l.prix)} MAD</div><svg class="bc-${l.code_barre}"></svg></div>`).join('')}</div>
@@ -1903,9 +1903,9 @@ async function generateReport(type) {
     <html><head><meta charset="utf-8"><title>${title}</title>
     <style>
       body{font-family:'Satoshi',Arial,sans-serif;padding:20px;font-size:12px}
-      h1{color:#1a3a5c;font-size:18px;border-bottom:2px solid #e8760a;padding-bottom:8px}
+      h1{color:#1e293b;font-size:18px;border-bottom:2px solid #2563eb;padding-bottom:8px}
       table{width:100%;border-collapse:collapse;margin-top:10px}
-      th{background:#1a3a5c;color:#fff;padding:8px;text-align:left;font-size:11px}
+      th{background:#2563eb;color:#fff;padding:8px;text-align:left;font-size:11px}
       td{padding:6px 8px;border-bottom:1px solid #e5e7eb}
       tr:hover{background:#f5f6fa}
       .total{font-weight:bold;background:#fef3c7}
