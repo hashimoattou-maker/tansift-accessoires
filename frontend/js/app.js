@@ -1494,7 +1494,7 @@ function printDocument(id) {
     const societe = {
       nom: p.societe_nom || 'Accessoires Tensift',
       slogan: p.societe_slogan || 'ERP Automotive',
-      logo: p.societe_logo_url || '',
+      logo: p.societe_logo || '',
       logoWidth: p.societe_logo_width || 180,
       logoHeight: p.societe_logo_height || 0,
       logoPosition: p.societe_logo_position || 'gauche',
@@ -1947,7 +1947,7 @@ function switchParamTab(el, tab) {
   switch (tab) {
     case 'societe':
       apiFetch('/parametres').then(p => {
-        const logoUrl = p.societe_logo_url || '';
+        const logoUrl = p.societe_logo || '';
         container.innerHTML = html`
           <div class="card">
             <div class="card-header"><h3>Informations société</h3><button class="btn btn-primary btn-sm" onclick="saveSociete()">💾 Enregistrer</button></div>
@@ -2099,8 +2099,8 @@ async function uploadLogo() {
     // Update preview
     const preview = $('#logoPreview');
     preview.innerHTML = `<img src="${data.url}?t=${Date.now()}" style="max-width:180px;max-height:120px;object-fit:contain" id="logoImg">`;
-    // Save URL to params
-    await apiFetch('/parametres', { method: 'PUT', body: JSON.stringify({ societe_logo_url: data.url }) });
+    // Save base64 to params
+    await apiFetch('/parametres', { method: 'PUT', body: JSON.stringify({ societe_logo: data.url }) });
     // Add delete button if missing
     const delBtn = preview.parentElement.querySelector('.btn-danger');
     if (!delBtn) {
@@ -2115,7 +2115,7 @@ async function deleteLogo() {
   if (!confirm('Supprimer le logo ?')) return;
   try {
     await apiFetch('/parametres/logo', { method: 'DELETE' });
-    await apiFetch('/parametres', { method: 'PUT', body: JSON.stringify({ societe_logo_url: '' }) });
+    await apiFetch('/parametres', { method: 'PUT', body: JSON.stringify({ societe_logo: '' }) });
     $('#logoPreview').innerHTML = '<span style="color:var(--text-light);font-size:0.8rem">Aucun logo</span>';
     // Remove delete button
     const delBtn = document.querySelector('.btn-danger[onclick*="deleteLogo"]');

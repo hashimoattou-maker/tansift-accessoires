@@ -124,25 +124,53 @@ module.exports = function(db) {
     res.json({ success: true });
   });
 
-  // POST /api/parametres/logo - upload company logo
-  router.post('/logo', upload.single('logo'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'Aucun fichier fourni' });
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    if (!['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+  // POST /api/parametres/logo - upload company logo (stored as base64 in DB)
+  router.post('/logo', upload.single('logo'), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'Aucun fichier fourni' });
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      if (!['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: 'Format non supporté (PNG, JPG, GIF, WEBP, SVG)' });
+      }
+      const mimeMap = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
+      const mime = mimeMap[ext] || 'image/png';
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const base64 = `data:${mime};base64,${fileBuffer.toString('base64')}`;
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: 'Format non supporté (PNG, JPG, GIF, WEBP, SVG)' });
+      await db.prepare(`REPLACE INTO parametres (cle, valeur, section) VALUES ('societe_logo',?,'societe')`).run(base64);
+      res.json({ url: base64 });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
     }
-    res.json({ url: `/uploads/logo_societe${ext}`, filename: `logo_societe${ext}` });
+  });
+
+  // GET /api/parametres/logo - serve logo from DB
+  router.get('/logo', async (req, res) => {
+    try {
+      const row = await db.prepare(`SELECT valeur FROM parametres WHERE cle = 'societe_logo'`).get();
+      if (!row || !row.valeur) return res.status(404).json({ error: 'Pas de logo' });
+      const base64 = row.valeur;
+      const match = base64.match(/^data:(.+);base64,(.+)$/);
+      if (!match) return res.status(400).json({ error: 'Logo invalide' });
+      const [, mime, data] = match;
+      const buf = Buffer.from(data, 'base64');
+      res.setHeader('Content-Type', mime);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(buf);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // DELETE /api/parametres/logo - remove company logo
-  router.delete('/logo', (req, res) => {
-    const files = fs.readdirSync(uploadsDir).filter(f => f.startsWith('logo_societe'));
-    files.forEach(f => {
-      const p = path.join(uploadsDir, f);
-      if (fs.existsSync(p)) fs.unlinkSync(p);
-    });
-    res.json({ success: true });
+  router.delete('/logo', async (req, res) => {
+    try {
+      await db.prepare(`UPDATE parametres SET valeur = '' WHERE cle = 'societe_logo'`).run();
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // GET /api/parametres/export-zip

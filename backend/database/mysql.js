@@ -495,6 +495,27 @@ async function createTables() {
   try {
     await pool.query(`DELETE FROM categories WHERE code IN ('FILT','LUBR','PNEU')`);
   } catch (e) { /* ignore */ }
+
+  // Migration: convertir ancien logo fichier -> base64 dans la DB
+  try {
+    const [rows] = await pool.query(`SELECT valeur FROM parametres WHERE cle = 'societe_logo'`);
+    if (rows.length > 0 && rows[0].valeur && rows[0].valeur.startsWith('/uploads/')) {
+      const fs = require('fs');
+      const pathMod = require('path');
+      const uploadsDir = pathMod.join(__dirname, '..', '..', 'uploads');
+      const logoFile = rows[0].valeur;
+      const fullPath = pathMod.join(uploadsDir, pathMod.basename(logoFile));
+      if (fs.existsSync(fullPath)) {
+        const ext = pathMod.extname(fullPath).toLowerCase();
+        const mimeMap = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
+        const mime = mimeMap[ext] || 'image/png';
+        const buf = fs.readFileSync(fullPath);
+        const base64 = `data:${mime};base64,${buf.toString('base64')}`;
+        await pool.query(`UPDATE parametres SET valeur = ? WHERE cle = 'societe_logo'`, [base64]);
+        console.log('[migration] Logo converti en base64 dans la DB');
+      }
+    }
+  } catch (e) { console.warn('Migration logo:', e.message); }
 }
 
 async function seedData() {
