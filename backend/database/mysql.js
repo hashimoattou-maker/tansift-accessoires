@@ -29,7 +29,7 @@ class Statement {
 
   async run(...params) {
     if (Array.isArray(params[0])) params = params[0];
-    params = params.filter(p => p !== undefined);
+    params = params.map(p => p === undefined ? null : p);
     let result;
     if (params.length > 0) {
       [result] = await this.pool.execute(this.sql, params);
