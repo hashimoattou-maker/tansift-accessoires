@@ -140,7 +140,7 @@ async function createTables() {
     `CREATE TABLE IF NOT EXISTS parametres (
       id INT AUTO_INCREMENT PRIMARY KEY,
       cle VARCHAR(255) UNIQUE NOT NULL,
-      valeur TEXT NOT NULL,
+      valeur MEDIUMTEXT NOT NULL,
       type VARCHAR(50) DEFAULT 'text',
       section VARCHAR(50) DEFAULT 'general',
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -516,6 +516,11 @@ async function createTables() {
       }
     }
   } catch (e) { console.warn('Migration logo:', e.message); }
+
+  // Migration: colonne valeur TEXT -> MEDIUMTEXT pour stocker le logo en base64
+  try {
+    await pool.query(`ALTER TABLE parametres MODIFY COLUMN valeur MEDIUMTEXT NOT NULL`);
+  } catch (e) { /* ignore */ }
 }
 
 async function seedData() {

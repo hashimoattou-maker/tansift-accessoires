@@ -2098,7 +2098,7 @@ async function uploadLogo() {
     showToast('Logo uploadé', 'success');
     // Update preview
     const preview = $('#logoPreview');
-    preview.innerHTML = `<img src="${data.url}?t=${Date.now()}" style="max-width:180px;max-height:120px;object-fit:contain" id="logoImg">`;
+    preview.innerHTML = `<img src="${data.url}" style="max-width:180px;max-height:120px;object-fit:contain" id="logoImg">`;
     // Save base64 to params
     await apiFetch('/parametres', { method: 'PUT', body: JSON.stringify({ societe_logo: data.url }) });
     // Add delete button if missing

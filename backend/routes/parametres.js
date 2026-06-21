@@ -5,14 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => cb(null, 'logo_societe' + path.extname(file.originalname))
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 module.exports = function(db) {
   // GET /api/parametres
@@ -130,14 +123,11 @@ module.exports = function(db) {
       if (!req.file) return res.status(400).json({ error: 'Aucun fichier fourni' });
       const ext = path.extname(req.file.originalname).toLowerCase();
       if (!['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
-        fs.unlinkSync(req.file.path);
         return res.status(400).json({ error: 'Format non supporté (PNG, JPG, GIF, WEBP, SVG)' });
       }
       const mimeMap = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
       const mime = mimeMap[ext] || 'image/png';
-      const fileBuffer = fs.readFileSync(req.file.path);
-      const base64 = `data:${mime};base64,${fileBuffer.toString('base64')}`;
-      fs.unlinkSync(req.file.path);
+      const base64 = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
       await db.prepare(`REPLACE INTO parametres (cle, valeur, section) VALUES ('societe_logo',?,'societe')`).run(base64);
       res.json({ url: base64 });
     } catch (e) {
