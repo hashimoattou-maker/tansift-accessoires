@@ -7,8 +7,13 @@ class Statement {
   }
 
   async _execute(params) {
-    const [rows] = await this.pool.execute(this.sql, params);
-    return rows;
+    if (params.length > 0) {
+      const [rows] = await this.pool.execute(this.sql, params);
+      return rows;
+    } else {
+      const [rows] = await this.pool.query(this.sql);
+      return rows;
+    }
   }
 
   async get(...params) {
@@ -41,8 +46,13 @@ class Database {
   async run(sql, params = []) {
     if (typeof sql === 'string') {
       if (Array.isArray(params[0])) params = params[0];
-      const [result] = await this.pool.execute(sql, params);
-      return { lastInsertRowid: result.insertId, changes: result.affectedRows };
+      if (params.length > 0) {
+        const [result] = await this.pool.execute(sql, params);
+        return { lastInsertRowid: result.insertId, changes: result.affectedRows };
+      } else {
+        const [result] = await this.pool.query(sql);
+        return { lastInsertRowid: result.insertId, changes: result.affectedRows };
+      }
     }
     return { lastInsertRowid: 0 };
   }
@@ -51,7 +61,7 @@ class Database {
     const statements = sql.split(';').filter(s => s.trim().length > 0);
     for (const stmt of statements) {
       try {
-        await this.pool.execute(stmt + ';');
+        await this.pool.query(stmt.trim());
       } catch (e) {
         if (!e.message?.includes('Duplicate') && !e.message?.includes('already exists')) {
           console.warn('Exec warning:', e.message);
@@ -469,7 +479,7 @@ async function createTables() {
 
   for (const sql of tables) {
     try {
-      await pool.execute(sql);
+      await pool.query(sql);
     } catch (e) {
       console.warn('Table warning:', e.message);
     }
@@ -481,14 +491,14 @@ async function seedData() {
   const adminPassword = bcrypt.hashSync('admin123', 10);
 
   // Check if data already exists
-  const [existing] = await pool.execute('SELECT COUNT(*) as cnt FROM articles');
+  const [existing] = await pool.query('SELECT COUNT(*) as cnt FROM articles');
   if (existing[0].cnt > 0) {
     console.log(`[seed] ${existing[0].cnt} articles existent déjà, seed ignoré.`);
     return;
   }
 
   // TVA
-  await pool.execute('INSERT IGNORE INTO taux_tva (id, taux, label, defaut) VALUES (1,20.0,"TVA 20%",1),(2,14.0,"TVA 14%",0),(3,10.0,"TVA 10%",0),(4,7.0,"TVA 7%",0),(5,0.0,"Exonéré",0)');
+  await pool.query('INSERT IGNORE INTO taux_tva (id, taux, label, defaut) VALUES (1,20.0,"TVA 20%",1),(2,14.0,"TVA 14%",0),(3,10.0,"TVA 10%",0),(4,7.0,"TVA 7%",0),(5,0.0,"Exonéré",0)');
 
   // Parametres
   const parametres = [
@@ -513,7 +523,7 @@ async function seedData() {
     ['delai_contentieux', '90', 'number', 'alertes'], ['marge_minimale', '15', 'number', 'configuration']
   ];
   for (const [cle, valeur, type, section] of parametres) {
-    await pool.execute('INSERT IGNORE INTO parametres (cle, valeur, type, section) VALUES (?,?,?,?)', [cle, valeur, type, section]);
+    await pool.query('INSERT IGNORE INTO parametres (cle, valeur, type, section) VALUES (?,?,?,?)', [cle, valeur, type, section]);
   }
 
   // Sequences
@@ -524,7 +534,7 @@ async function seedData() {
     ['CF-', 'commande_fournisseur'], ['BR-', 'bon_reception'], ['FAF-', 'facture_fournisseur']
   ];
   for (const [prefixe, type] of sequences) {
-    await pool.execute('INSERT IGNORE INTO sequences (prefixe, type_document, derniere_valeur, annee) VALUES (?,?,0,?)', [prefixe, type, year]);
+    await pool.query('INSERT IGNORE INTO sequences (prefixe, type_document, derniere_valeur, annee) VALUES (?,?,0,?)', [prefixe, type, year]);
   }
 
   // Categories
@@ -535,11 +545,11 @@ async function seedData() {
     ['ASSEM', 'Assemblage', 20, 365]
   ];
   for (const [code, nom, tva, garantie] of categories) {
-    await pool.execute('INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)', [code, nom, tva, garantie]);
+    await pool.query('INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)', [code, nom, tva, garantie]);
   }
 
   // Admin user
-  await pool.execute('INSERT IGNORE INTO utilisateurs (nom, email, mot_de_passe, role) VALUES (?,?,?,?)',
+  await pool.query('INSERT IGNORE INTO utilisateurs (nom, email, mot_de_passe, role) VALUES (?,?,?,?)',
     ['Administrateur', 'admin@tansift.ma', adminPassword, 'Administrateur']);
 
   // Articles
@@ -558,7 +568,7 @@ async function seedData() {
     ['CARRO-001', 'Rétroviseur électrique gauche', 6, 280, 520, 5, 3, 20, 'H-01-01']
   ];
   for (const [ref, des, cat, pa, pv, stock, min, max, eml] of articlesDemo) {
-    await pool.execute('INSERT IGNORE INTO articles (reference, designation, categorie_id, prix_achat_ht, prix_vente_ht, stock_actuel, stock_min, stock_max, emplacement) VALUES (?,?,?,?,?,?,?,?,?)',
+    await pool.query('INSERT IGNORE INTO articles (reference, designation, categorie_id, prix_achat_ht, prix_vente_ht, stock_actuel, stock_min, stock_max, emplacement) VALUES (?,?,?,?,?,?,?,?,?)',
       [ref, des, cat, pa, pv, stock, min, max, eml]);
   }
 
@@ -571,7 +581,7 @@ async function seedData() {
     ['CLT-34210005', 'Garage', 'Garage MODERNE', '0655112233', 'garage.moderne@email.ma', 'Fès', null, null]
   ];
   for (const [code, type, nom, tel, email, ville, ice, rc] of clientsDemo) {
-    await pool.execute('INSERT IGNORE INTO clients (code_client, type_client, raison_sociale, telephone, email, ville, ice, rc) VALUES (?,?,?,?,?,?,?,?)',
+    await pool.query('INSERT IGNORE INTO clients (code_client, type_client, raison_sociale, telephone, email, ville, ice, rc) VALUES (?,?,?,?,?,?,?,?)',
       [code, type, nom, tel, email, ville, ice, rc]);
   }
 
@@ -582,7 +592,7 @@ async function seedData() {
     ['FR-44110003', 'Import Car Distribution', '0522333333', 'commandes@icd.ma', 'Tanger', 45, 3]
   ];
   for (const [code, nom, tel, email, ville, delai, eval_] of frnDemo) {
-    await pool.execute('INSERT IGNORE INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, ville, delai_livraison_jours, evaluation) VALUES (?,?,?,?,?,?,?)',
+    await pool.query('INSERT IGNORE INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, ville, delai_livraison_jours, evaluation) VALUES (?,?,?,?,?,?,?)',
       [code, nom, tel, email, ville, delai, eval_]);
   }
 }
