@@ -18,7 +18,7 @@ module.exports = function(db) {
       else { sql += ` AND a.actif = 1`; }
 
       const offset = (parseInt(page) - 1) * parseInt(limit);
-      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql})`).get(...params);
+      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql}) AS _sub`).get(...params);
       sql += ` ORDER BY a.reference LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
 

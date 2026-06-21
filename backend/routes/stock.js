@@ -11,7 +11,7 @@ module.exports = function(db) {
       const params = [];
       if (article_id) { sql += ` AND m.article_id = ?`; params.push(article_id); }
       if (type) { sql += ` AND m.type_mouvement = ?`; params.push(type); }
-      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql})`).get(...params);
+      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql}) AS _sub`).get(...params);
       const offset = (parseInt(page) - 1) * parseInt(limit);
       sql += ` ORDER BY m.created_at DESC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);

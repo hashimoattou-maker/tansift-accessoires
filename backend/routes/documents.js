@@ -104,7 +104,7 @@ module.exports = function(db) {
       if (fournisseur_id) { sql += ` AND d.fournisseur_id = ?`; params.push(fournisseur_id); }
       if (statut) { sql += ` AND d.statut = ?`; params.push(statut); }
 
-      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql})`).get(...params);
+      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql}) AS _sub`).get(...params);
       const offset = (parseInt(page) - 1) * parseInt(limit);
       sql += ` ORDER BY d.date_document DESC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);

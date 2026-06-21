@@ -12,7 +12,7 @@ module.exports = function(db) {
       if (search) { sql += ` AND (raison_sociale LIKE ? OR code_client LIKE ? OR telephone LIKE ?)`; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
       if (type) { sql += ` AND type_client = ?`; params.push(type); }
 
-      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql})`).get(...params);
+      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql}) AS _sub`).get(...params);
       const offset = (parseInt(page) - 1) * parseInt(limit);
       sql += ` ORDER BY raison_sociale LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);

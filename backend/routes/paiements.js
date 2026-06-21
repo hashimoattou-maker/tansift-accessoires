@@ -9,7 +9,7 @@ module.exports = function(db) {
       let sql = `SELECT p.*, c.raison_sociale as client_nom FROM paiements_clients p LEFT JOIN clients c ON p.client_id = c.id WHERE 1=1`;
       const params = [];
       if (client_id) { sql += ` AND p.client_id = ?`; params.push(client_id); }
-      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql})`).get(...params);
+      const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql}) AS _sub`).get(...params);
       const offset = (parseInt(page) - 1) * parseInt(limit);
       sql += ` ORDER BY p.date_paiement DESC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
