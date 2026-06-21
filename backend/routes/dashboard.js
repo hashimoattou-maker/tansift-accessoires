@@ -39,13 +39,13 @@ module.exports = function(db) {
     try {
       const annee = req.query.annee || new Date().getFullYear();
       const data = await db.prepare(`
-        SELECT strftime('%m', date_document) as mois, 
+        SELECT MONTH(date_document) as mois, 
                COALESCE(SUM(net_a_payer), 0) as montant
         FROM documents 
         WHERE type_document = 'facture_client' 
           AND statut NOT IN ('brouillon','annule')
-          AND strftime('%Y', date_document) = ?
-        GROUP BY strftime('%m', date_document)
+          AND YEAR(date_document) = ?
+        GROUP BY MONTH(date_document)
         ORDER BY mois
       `).all(String(annee));
       res.json(data);
