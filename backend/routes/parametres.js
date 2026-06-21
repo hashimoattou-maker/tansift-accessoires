@@ -16,61 +16,89 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 module.exports = function(db) {
   // GET /api/parametres
-  router.get('/', (req, res) => {
-    const params = db.prepare(`SELECT * FROM parametres`).all();
-    const result = {};
-    for (const p of params) {
-      result[p.cle] = p.valeur;
+  router.get('/', async (req, res) => {
+    try {
+      const params = await db.prepare(`SELECT * FROM parametres`).all();
+      const result = {};
+      for (const p of params) {
+        result[p.cle] = p.valeur;
+      }
+      res.json(result);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
     }
-    res.json(result);
   });
 
   // PUT /api/parametres
-  router.put('/', (req, res) => {
-    const updates = req.body;
-    const upsert = db.prepare(`INSERT OR REPLACE INTO parametres (cle, valeur, section) VALUES (?,?,?)`);
-    const transaction = db.transaction(() => {
-      for (const [cle, valeur] of Object.entries(updates)) {
-        const existing = db.prepare(`SELECT section FROM parametres WHERE cle = ?`).get(cle);
-        upsert.run(cle, String(valeur), existing ? existing.section : 'general');
+  router.put('/', async (req, res) => {
+    try {
+      const updates = req.body;
+      await db.run('START TRANSACTION');
+      try {
+        for (const [cle, valeur] of Object.entries(updates)) {
+          const existing = await db.prepare(`SELECT section FROM parametres WHERE cle = ?`).get(cle);
+          await db.prepare(`INSERT OR REPLACE INTO parametres (cle, valeur, section) VALUES (?,?,?)`)
+            .run(cle, String(valeur), existing ? existing.section : 'general');
+        }
+        await db.run('COMMIT');
+      } catch (txError) {
+        await db.run('ROLLBACK');
+        throw txError;
       }
-    });
-    transaction();
-    res.json({ success: true });
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // GET /api/parametres/utilisateurs
-  router.get('/utilisateurs', (req, res) => {
-    res.json(db.prepare(`SELECT id, nom, email, role, telephone, actif, theme, created_at FROM utilisateurs ORDER BY nom`).all());
+  router.get('/utilisateurs', async (req, res) => {
+    try {
+      res.json(await db.prepare(`SELECT id, nom, email, role, telephone, actif, theme, created_at FROM utilisateurs ORDER BY nom`).all());
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // POST /api/parametres/utilisateurs
-  router.post('/utilisateurs', (req, res) => {
-    const { nom, email, mot_de_passe, role, telephone } = req.body;
-    if (!nom || !email || !mot_de_passe) return res.status(400).json({ error: 'Nom, email et mot de passe requis' });
-    const existing = db.prepare(`SELECT id FROM utilisateurs WHERE email = ?`).get(email);
-    if (existing) return res.status(400).json({ error: 'Cet email est déjà utilisé' });
-    const hash = bcrypt.hashSync(mot_de_passe, 10);
-    const result = db.prepare(`INSERT INTO utilisateurs (nom, email, mot_de_passe, role, telephone) VALUES (?,?,?,?,?)`)
-      .run(nom, email, hash, role || 'Commercial', telephone);
-    res.status(201).json({ id: result.lastInsertRowid });
+  router.post('/utilisateurs', async (req, res) => {
+    try {
+      const { nom, email, mot_de_passe, role, telephone } = req.body;
+      if (!nom || !email || !mot_de_passe) return res.status(400).json({ error: 'Nom, email et mot de passe requis' });
+      const existing = await db.prepare(`SELECT id FROM utilisateurs WHERE email = ?`).get(email);
+      if (existing) return res.status(400).json({ error: 'Cet email est déjà utilisé' });
+      const hash = bcrypt.hashSync(mot_de_passe, 10);
+      const result = await db.prepare(`INSERT INTO utilisateurs (nom, email, mot_de_passe, role, telephone) VALUES (?,?,?,?,?)`)
+        .run(nom, email, hash, role || 'Commercial', telephone);
+      res.status(201).json({ id: result.lastInsertRowid });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // PUT /api/parametres/utilisateurs/:id
-  router.put('/utilisateurs/:id', (req, res) => {
-    const { nom, email, role, telephone, actif } = req.body;
-    db.prepare(`UPDATE utilisateurs SET nom=?, email=?, role=?, telephone=?, actif=? WHERE id=?`)
-      .run(nom, email, role, telephone, actif !== undefined ? actif : 1, req.params.id);
-    res.json({ success: true });
+  router.put('/utilisateurs/:id', async (req, res) => {
+    try {
+      const { nom, email, role, telephone, actif } = req.body;
+      await db.prepare(`UPDATE utilisateurs SET nom=?, email=?, role=?, telephone=?, actif=? WHERE id=?`)
+        .run(nom, email, role, telephone, actif !== undefined ? actif : 1, req.params.id);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // PUT /api/parametres/utilisateurs/:id/password
-  router.put('/utilisateurs/:id/password', (req, res) => {
-    const { mot_de_passe } = req.body;
-    if (!mot_de_passe || mot_de_passe.length < 4) return res.status(400).json({ error: 'Mot de passe trop court' });
-    const hash = bcrypt.hashSync(mot_de_passe, 10);
-    db.prepare(`UPDATE utilisateurs SET mot_de_passe = ? WHERE id = ?`).run(hash, req.params.id);
-    res.json({ success: true });
+  router.put('/utilisateurs/:id/password', async (req, res) => {
+    try {
+      const { mot_de_passe } = req.body;
+      if (!mot_de_passe || mot_de_passe.length < 4) return res.status(400).json({ error: 'Mot de passe trop court' });
+      const hash = bcrypt.hashSync(mot_de_passe, 10);
+      await db.prepare(`UPDATE utilisateurs SET mot_de_passe = ? WHERE id = ?`).run(hash, req.params.id);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // POST /api/parametres/sauvegarder
