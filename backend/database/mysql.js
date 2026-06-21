@@ -490,6 +490,11 @@ async function createTables() {
       console.warn('Table warning:', e.message);
     }
   }
+
+  // Migration: supprimer catégories Filtration, Lubrifiants, Pneumatiques
+  try {
+    await pool.query(`DELETE FROM categories WHERE code IN ('FILT','LUBR','PNEU')`);
+  } catch (e) { /* ignore */ }
 }
 
 async function seedData() {
@@ -546,8 +551,8 @@ async function seedData() {
   // Categories
   const categories = [
     ['FREIN', 'Freinage', 20, 365], ['EMBR', 'Embrayage', 20, 365], ['SUSP', 'Suspension', 20, 365],
-    ['FILT', 'Filtration', 20, 180], ['ELEC', 'Électricité', 20, 365], ['CARRO', 'Carrosserie', 20, 365],
-    ['LUBR', 'Lubrifiants', 20, 0], ['PNEU', 'Pneumatiques', 20, 180], ['MOTEUR', 'Moteurs', 20, 730],
+    ['ELEC', 'Électricité', 20, 365], ['CARRO', 'Carrosserie', 20, 365],
+    ['MOTEUR', 'Moteurs', 20, 730],
     ['ASSEM', 'Assemblage', 20, 365]
   ];
   for (const [code, nom, tva, garantie] of categories) {
@@ -564,14 +569,10 @@ async function seedData() {
     ['FRE-002', 'Disques de frein avant ventilés', 1, 250, 480, 30, 5, 60, 'A-01-02'],
     ['FRE-003', 'Tambour de frein arrière', 1, 180, 350, 0, 5, 40, 'A-01-03'],
     ['EMB-001', 'Kit embrayage complet', 2, 850, 1500, 15, 3, 30, 'B-01-01'],
-    ['FILT-001', 'Filtre à huile moteur', 4, 35, 80, 200, 50, 500, 'C-01-01'],
-    ['FILT-002', 'Filtre à air habitacle', 4, 55, 120, 150, 30, 300, 'C-01-02'],
-    ['ELEC-001', 'Batterie 12V 70Ah', 5, 450, 850, 20, 5, 40, 'D-01-01'],
-    ['ELEC-002', 'Alternateur 120A', 5, 650, 1200, 8, 3, 20, 'D-01-02'],
+    ['ELEC-001', 'Batterie 12V 70Ah', 4, 450, 850, 20, 5, 40, 'D-01-01'],
+    ['ELEC-002', 'Alternateur 120A', 4, 650, 1200, 8, 3, 20, 'D-01-02'],
     ['SUSP-001', 'Amortisseur avant gauche', 3, 320, 600, 12, 5, 30, 'E-01-01'],
-    ['LUBR-001', 'Huile moteur 5W40 5L', 7, 110, 220, 80, 20, 200, 'F-01-01'],
-    ['PNEU-001', 'Pneu 205/55 R16 été', 8, 350, 650, 40, 10, 80, 'G-01-01'],
-    ['CARRO-001', 'Rétroviseur électrique gauche', 6, 280, 520, 5, 3, 20, 'H-01-01']
+    ['CARRO-001', 'Rétroviseur électrique gauche', 5, 280, 520, 5, 3, 20, 'H-01-01']
   ];
   for (const [ref, des, cat, pa, pv, stock, min, max, eml] of articlesDemo) {
     await pool.query('INSERT IGNORE INTO articles (reference, designation, categorie_id, prix_achat_ht, prix_vente_ht, stock_actuel, stock_min, stock_max, emplacement) VALUES (?,?,?,?,?,?,?,?,?)',

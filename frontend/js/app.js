@@ -323,7 +323,7 @@ function showArticleForm(articleId) {
             <div class="form-group"><label>Description</label><textarea name="description" class="form-textarea">${a.description || ''}</textarea></div>
             <div class="form-row">
               <div class="form-group"><label>Catégorie</label><select name="categorie_id" class="form-select">${catOptions.replace(`value="${a.categorie_id}"`, `value="${a.categorie_id}" selected`)}</select></div>
-              <div class="form-group"><label>Type</label><select name="type_article" class="form-select"><option value="accessoire" ${a.type_article==='accessoire'?'selected':''}>Accessoire</option><option value="moteur" ${a.type_article==='moteur'?'selected':''}>Moteur</option><option value="assemblage" ${a.type_article==='assemblage'?'selected':''}>Assemblage</option><option value="consommable" ${a.type_article==='consommable'?'selected':''}>Consommable</option></select></div>
+              <div class="form-group"><label>Type</label><select name="type_article" class="form-select"><option value="accessoire" ${a.type_article==='accessoire'?'selected':''}>Accessoire</option><option value="moteur" ${a.type_article==='moteur'?'selected':''}>Moteur</option><option value="assemblage" ${a.type_article==='assemblage'?'selected':''}>Assemblage</option></select></div>
             </div>
             <div class="form-row">
               <div class="form-group"><label>PA HT</label><input name="prix_achat_ht" type="number" step="0.01" class="form-control" value="${a.prix_achat_ht}"></div>
@@ -357,7 +357,7 @@ function showArticleForm(articleId) {
           <div class="form-group"><label>Description</label><textarea name="description" class="form-textarea"></textarea></div>
           <div class="form-row">
             <div class="form-group"><label>Catégorie</label><select name="categorie_id" class="form-select">${catOptions}</select></div>
-            <div class="form-group"><label>Type</label><select name="type_article" class="form-select"><option value="accessoire">Accessoire</option><option value="moteur">Moteur</option><option value="assemblage">Assemblage</option><option value="consommable">Consommable</option></select></div>
+            <div class="form-group"><label>Type</label><select name="type_article" class="form-select"><option value="accessoire">Accessoire</option><option value="moteur">Moteur</option><option value="assemblage">Assemblage</option></select></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>PA HT</label><input name="prix_achat_ht" type="number" step="0.01" class="form-control" value="0"></div>
