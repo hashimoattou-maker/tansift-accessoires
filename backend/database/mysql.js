@@ -29,7 +29,13 @@ class Statement {
 
   async run(...params) {
     if (Array.isArray(params[0])) params = params[0];
-    const [result] = await this.pool.execute(this.sql, params);
+    params = params.filter(p => p !== undefined);
+    let result;
+    if (params.length > 0) {
+      [result] = await this.pool.execute(this.sql, params);
+    } else {
+      [result] = await this.pool.query(this.sql);
+    }
     return { lastInsertRowid: result.insertId, changes: result.affectedRows };
   }
 }
