@@ -47,7 +47,7 @@ module.exports = function(db) {
       const { composant_id, quantite } = req.body;
       if (!composant_id || !quantite) return res.status(400).json({ error: 'Composant et quantité requis' });
 
-      await db.prepare(`INSERT OR REPLACE INTO nomenclature_moteur (moteur_id, composant_id, quantite) VALUES (?,?,?)`)
+      await db.prepare(`REPLACE INTO nomenclature_moteur (moteur_id, composant_id, quantite) VALUES (?,?,?)`)
         .run(req.params.id, composant_id, quantite);
       await auditLog(db, req.user?.id, 'NOMENCLATURE', 'moteur', req.params.id, { composant_id, quantite });
       res.status(201).json({ success: true });

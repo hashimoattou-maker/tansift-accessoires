@@ -199,7 +199,7 @@ module.exports = function(db) {
         .run(totalHT, totalTVA, totalTTC, totalTTC, newDocId);
 
       // Marquer l'ancien document
-      await db.prepare(`UPDATE documents SET statut = 'valide', notes = COALESCE(notes,'') || '\nTransféré vers ' || (SELECT numero FROM documents WHERE id = ?) WHERE id = ?`)
+      await db.prepare(`UPDATE documents SET statut = 'valide', notes = CONCAT(COALESCE(notes,''), '\nTransféré vers ', (SELECT numero FROM documents WHERE id = ?)) WHERE id = ?`)
         .run(newDocId, doc.id);
 
       await auditLog(db, req.user?.id, 'TRANSFERT', doc.type_document, doc.id, { vers: nextType, new_id: newDocId, numero });

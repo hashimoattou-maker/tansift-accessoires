@@ -37,7 +37,7 @@ module.exports = function(db) {
       try {
         for (const [cle, valeur] of Object.entries(updates)) {
           const existing = await db.prepare(`SELECT section FROM parametres WHERE cle = ?`).get(cle);
-          await db.prepare(`INSERT OR REPLACE INTO parametres (cle, valeur, section) VALUES (?,?,?)`)
+          await db.prepare(`REPLACE INTO parametres (cle, valeur, section) VALUES (?,?,?)`)
             .run(cle, String(valeur), existing ? existing.section : 'general');
         }
         await db.run('COMMIT');
