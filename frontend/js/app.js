@@ -1224,7 +1224,7 @@ function showDocumentForm(type) {
         <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea"></textarea></div>
         <h4 style="margin:0.5rem 0">Lignes du document</h4>
         <div id="docLignes">
-          <div class="doc-ligne" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:end">
+          <div class="doc-ligne" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:end">
             <div class="form-group"><label>Article</label><div class="autocomplete-wrap">
               <input type="text" class="form-control autocomplete-input" placeholder="Tapez nom/réf/code-barres..." autocomplete="off"
                 oninput="searchDocArticle(this)" onfocus="searchDocArticle(this)"
@@ -1233,8 +1233,9 @@ function showDocumentForm(type) {
               <button type="button" class="btn btn-sm btn-secondary" onclick="scanDocBarcode(this)" title="Scanner code-barres">📷</button>
               <div class="autocomplete-results"></div>
             </div></div>
+            <div class="form-group"><label>Unité source</label><select class="form-select source-unit-select"><option value="">—</option></select></div>
             <div class="form-group"><label>Qté</label><input type="number" class="form-control qte-input" value="1" min="1" oninput="calcDocLigne(this)"></div>
-            <div class="form-group"><label>PU TTC</label><input type="number" step="0.01" class="form-control prix-input" value="0" oninput="calcDocLigne(this)"></div>
+            <div class="form-group"><label>PU HT</label><input type="number" step="0.01" class="form-control prix-input" value="0" oninput="calcDocLigne(this)"></div>
             <div class="form-group"><label>HT</label><input type="text" class="form-control ht-aff" readonly style="background:var(--bg-card)"></div>
             <div class="form-group"><label>TVA</label><input type="text" class="form-control tva-aff" readonly style="background:var(--bg-card)"></div>
             <button type="button" class="btn btn-sm btn-danger" style="margin-bottom:0.5rem" onclick="removeLigne(this)">✕</button>
@@ -1261,22 +1262,24 @@ function calcDocLigne(el) {
   const htAff = ligne.querySelector('.ht-aff');
   const tvaAff = ligne.querySelector('.tva-aff');
   if (!prixInput || !htAff || !tvaAff) return;
-  const ttc = parseFloat(prixInput.value) || 0;
+  const ht = parseFloat(prixInput.value) || 0;
   const taux = parseFloat(prixInput.dataset.tauxTva) || 20;
-  const ht = ttc / (1 + taux / 100);
-  const tva = ttc - ht;
-  htAff.value = formatCurrency(ht) + ' MAD';
-  tvaAff.value = formatCurrency(tva) + ' MAD';
+  const tva = ht * taux / 100;
+  const qte = parseFloat(qteInput?.value) || 1;
+  htAff.value = formatCurrency(ht * qte) + ' MAD';
+  tvaAff.value = formatCurrency(tva * qte) + ' MAD';
   updateDocTotal();
 }
 
 function updateDocTotal() {
   const lignes = $$('.doc-ligne');
-  let totalTTC = 0;
+  let totalHT = 0, totalTVA = 0;
   lignes.forEach(l => {
     const qte = parseFloat(l.querySelector('.qte-input')?.value) || 1;
-    const ttc = parseFloat(l.querySelector('.prix-input')?.value) || 0;
-    totalTTC += qte * ttc;
+    const ht = parseFloat(l.querySelector('.prix-input')?.value) || 0;
+    const taux = parseFloat(l.querySelector('.prix-input')?.dataset?.tauxTva) || 20;
+    totalHT += ht * qte;
+    totalTVA += ht * qte * taux / 100;
   });
   let footer = $('#docTotal');
   if (!footer) {
@@ -1285,7 +1288,7 @@ function updateDocTotal() {
     footer.style.cssText = 'margin-top:0.5rem;text-align:right;font-weight:700;font-size:1.1rem;padding:0.5rem;border-top:2px solid var(--accent)';
     $('#docLignes').after(footer);
   }
-  footer.textContent = 'Total TTC: ' + formatCurrency(totalTTC) + ' MAD';
+  footer.innerHTML = `HT: ${formatCurrency(totalHT)} MAD | TVA: ${formatCurrency(totalTVA)} MAD | <span style="color:var(--accent)">TTC: ${formatCurrency(totalHT + totalTVA)} MAD</span>`;
 }
 
 window.addDocLigne = function(type) {
@@ -1351,14 +1354,34 @@ function selectDocArticle(el, id) {
 
   const pv = parseFloat(el.dataset.pv) || 0;
   const taux = parseFloat(el.dataset.taux) || 20;
-  const ttc = pv * (1 + taux / 100);
   const prixInput = ligne.querySelector('.prix-input');
   if (prixInput) {
-    prixInput.value = ttc.toFixed(2);
+    prixInput.value = pv.toFixed(2);
     prixInput.dataset.tauxTva = taux;
   }
   calcDocLigne(prixInput);
+
+  loadSourceUnitsForArticle(id, ligne);
   if (results) results.classList.remove('show');
+}
+
+async function loadSourceUnitsForArticle(articleId, ligneEl) {
+  const select = ligneEl?.querySelector('.source-unit-select');
+  if (!select) return;
+  try {
+    const data = await apiFetch(`/documents/historique-unite/${articleId}`);
+    select.innerHTML = '<option value="">—</option>';
+    if (data?.ventes?.length) {
+      const units = [...new Map(data.ventes.map(v => [v.source_unit_id, v])).values()];
+      units.forEach(v => {
+        if (v.source_unit_id) select.innerHTML += `<option value="${v.source_unit_id}">${v.source_unit_designation || 'Unité #' + v.source_unit_id}</option>`;
+      });
+    }
+    const decompData = await apiFetch(`/moteurs?article_id=${articleId}`);
+    if (decompData?.length) {
+      decompData.forEach(m => { select.innerHTML += `<option value="${m.id}">${m.reference || 'Moteur #' + m.id} - ${m.designation || ''}</option>`; });
+    }
+  } catch { /* ignore */ }
 }
 
 function scanDocBarcode(btn) {
@@ -1405,14 +1428,15 @@ async function saveDocument(e, type) {
     const input = ligne.querySelector('.autocomplete-input');
     const qte = ligne.querySelector('.qte-input');
     const prix = ligne.querySelector('.prix-input');
+    const sourceUnit = ligne.querySelector('.source-unit-select');
     const articleId = input?.dataset?.articleId;
     if (articleId) {
-      const ttc = parseFloat(prix?.value) || 0;
+      const ht = parseFloat(prix?.value) || 0;
       const taux = parseFloat(prix?.dataset?.tauxTva) || 20;
-      const ht = ttc / (1 + taux / 100);
       const [ref, ...desParts] = (input.value || '').split(' - ');
       lignes.push({
         article_id: parseInt(articleId),
+        source_unit_id: sourceUnit?.value ? parseInt(sourceUnit.value) : null,
         quantite: parseFloat(qte?.value) || 1,
         prix_unitaire_ht: ht,
         taux_tva: taux,
@@ -1455,10 +1479,10 @@ function editDocument(id) {
         }).join('')}
       </div>
       <h4 style="margin:1rem 0 0.5rem">Lignes</h4>
-      <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead>
-      <tbody>${d.lignes?.length ? d.lignes.map(l => html`<tr><td>${l.reference || l.art_reference || '-'}</td><td>${l.designation || l.art_designation || '-'}</td><td>${formatNumber(l.quantite)}</td><td>${formatCurrency(l.prix_unitaire_ht * (1 + (l.taux_tva||0)/100))}</td><td>${l.remise_pourcent}%</td><td>${l.taux_tva}%</td><td><strong>${formatCurrency(l.montant_ttc)}</strong></td></tr>`).join('') : '<tr><td colspan="7">Aucune ligne</td></tr>'}</tbody>
-      <tfoot><tr><td colspan="6" style="text-align:right;font-weight:600">Total TTC:</td><td>${formatCurrency(d.net_a_payer)}</td></tr>
-      <tr><td colspan="6" style="text-align:right">Dont TVA:</td><td>${formatCurrency(d.total_tva)}</td></tr>
+      <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Unité source</th><th>Qté</th><th>PU HT</th><th>TVA</th><th>Total HT</th></tr></thead>
+      <tbody>${d.lignes?.length ? d.lignes.map(l => html`<tr><td>${l.reference || l.art_reference || '-'}</td><td>${l.designation || l.art_designation || '-'}</td><td>${l.source_unit_designation ? `<span class="badge badge-info">${l.source_unit_designation}</span>` : '-'}</td><td>${formatNumber(l.quantite)}</td><td>${formatCurrency(l.prix_unitaire_ht)}</td><td>${l.taux_tva}%</td><td><strong>${formatCurrency(l.montant_ht)}</strong></td></tr>`).join('') : '<tr><td colspan="7">Aucune ligne</td></tr>'}</tbody>
+      <tfoot><tr><td colspan="6" style="text-align:right;font-weight:600">Total HT:</td><td>${formatCurrency(d.montant_ht)}</td></tr>
+      <tr><td colspan="6" style="text-align:right">TVA:</td><td>${formatCurrency(d.total_tva)}</td></tr>
       <tr><td colspan="6" style="text-align:right;font-weight:700;font-size:1rem">NET À PAYER:</td><td style="font-weight:700;font-size:1rem;color:var(--accent)">${formatCurrency(d.net_a_payer)}</td></tr></tfoot></table>
       ${d.notes ? html`<div class="form-group" style="margin-top:1rem"><label>Notes</label><textarea class="form-textarea" readonly>${d.notes}</textarea></div>` : ''}
     `;

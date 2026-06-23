@@ -521,6 +521,63 @@ async function createTables() {
   try {
     await pool.query(`ALTER TABLE parametres MODIFY COLUMN valeur MEDIUMTEXT NOT NULL`);
   } catch (e) { /* ignore */ }
+
+  // Migration: ajouter source_unit_id dans documents_lignes
+  try {
+    await pool.query(`ALTER TABLE documents_lignes ADD COLUMN source_unit_id INT DEFAULT NULL AFTER article_id`);
+    await pool.query(`ALTER TABLE documents_lignes ADD CONSTRAINT fk_ligne_source_unit FOREIGN KEY (source_unit_id) REFERENCES articles(id) ON DELETE SET NULL`);
+  } catch (e) { /* already exists */ }
+
+  // Migration: ajouter document_source_id dans documents
+  try {
+    await pool.query(`ALTER TABLE documents ADD COLUMN document_source_id INT DEFAULT NULL AFTER fournisseur_id`);
+    await pool.query(`ALTER TABLE documents ADD CONSTRAINT fk_doc_source FOREIGN KEY (document_source_id) REFERENCES documents(id) ON DELETE SET NULL`);
+  } catch (e) { /* already exists */ }
+
+  // Migration: table mouvements_stock
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS mouvements_stock (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      article_id INT NOT NULL,
+      type_mouvement ENUM('entree','sortie','transfert','ajustement','inventaire') NOT NULL,
+      quantite REAL NOT NULL,
+      stock_avant REAL DEFAULT 0,
+      stock_apres REAL DEFAULT 0,
+      prix_unitaire REAL DEFAULT 0,
+      document_id INT DEFAULT NULL,
+      document_type VARCHAR(50) DEFAULT NULL,
+      document_numero VARCHAR(255) DEFAULT NULL,
+      source_unit_id INT DEFAULT NULL,
+      client_id INT DEFAULT NULL,
+      fournisseur_id INT DEFAULT NULL,
+      motif TEXT,
+      utilisateur_id INT,
+      date_mouvement DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (article_id) REFERENCES articles(id),
+      FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL,
+      FOREIGN KEY (source_unit_id) REFERENCES articles(id) ON DELETE SET NULL,
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+      FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  } catch (e) { /* already exists */ }
+
+  // Migration: ajouter colonnes manquantes dans mouvements_stock
+  try { await pool.query(`ALTER TABLE mouvements_stock ADD COLUMN document_numero VARCHAR(255) DEFAULT NULL AFTER document_type`); } catch (e) { /* exists */ }
+  try { await pool.query(`ALTER TABLE mouvements_stock ADD COLUMN source_unit_id INT DEFAULT NULL AFTER document_numero`); } catch (e) { /* exists */ }
+  try { await pool.query(`ALTER TABLE mouvements_stock ADD COLUMN client_id INT DEFAULT NULL AFTER source_unit_id`); } catch (e) { /* exists */ }
+  try { await pool.query(`ALTER TABLE mouvements_stock ADD COLUMN fournisseur_id INT DEFAULT NULL AFTER client_id`); } catch (e) { /* exists */ }
+
+  // Migration: indexes pour documents commerciaux
+  try {
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_mouv_article ON mouvements_stock(article_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_mouv_document ON mouvements_stock(document_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_mouv_source_unit ON mouvements_stock(source_unit_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_mouv_client ON mouvements_stock(client_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_mouv_date ON mouvements_stock(date_mouvement)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_doc_source ON documents(document_source_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_ligne_source ON documents_lignes(source_unit_id)`);
+  } catch (e) { /* already exists */ }
 }
 
 async function seedData() {
