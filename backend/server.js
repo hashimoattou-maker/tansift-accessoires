@@ -44,6 +44,7 @@ function startServer() {
   app.use('/api/paiements', authenticateToken, require('./routes/paiements')(db));
   app.use('/api/stock', authenticateToken, require('./routes/stock')(db));
   app.use('/api/moteurs', authenticateToken, require('./routes/moteurs')(db));
+  app.use('/api/unites', authenticateToken, require('./routes/unites')(db));
   app.use('/api/barcodes', authenticateToken, require('./routes/barcodes')(db));
   app.use('/api/categories', authenticateToken, require('./routes/categories')(db));
   app.use('/api/dashboard', authenticateToken, require('./routes/dashboard')(db));

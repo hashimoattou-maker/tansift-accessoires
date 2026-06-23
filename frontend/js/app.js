@@ -146,6 +146,7 @@ function renderBreadcrumb() {
     fournisseurs: 'Fournisseurs',
     'documents-achats': 'Achats',
     'documents-ventes': 'Ventes',
+    unites: 'Unités Assemblables',
     barcodes: 'Codes-barres',
     rapports: 'Rapports',
     parametres: 'Paramètres',
@@ -165,6 +166,7 @@ function renderPage() {
     fournisseurs: renderFournisseurs,
     'documents-achats': (p) => renderDocuments('achats', p),
     'documents-ventes': (p) => renderDocuments('ventes', p),
+    unites: renderUnites,
     barcodes: renderBarcodes,
     rapports: renderRapports,
     parametres: renderParametres,
@@ -636,6 +638,242 @@ function showMoteurForm() {
     `, `<button class="btn btn-secondary" onclick="closeModal()">Fermer</button>`);
   });
 }
+
+// ==================== UNITÉS ASSEMBLABLES ====================
+function renderUnites(page) {
+  page.innerHTML = html`
+    <div class="page-title">Unités Assemblables <button class="btn btn-primary" onclick="showMarquerUnite()">+ Marquer article comme unité</button></div>
+    <div class="filters-bar">
+      <input type="text" id="uniteSearch" class="form-control" placeholder="Référence, désignation..." style="width:250px" oninput="loadUnites()">
+      <select id="uniteTypeFilter" class="form-select" style="width:180px" onchange="loadUnites()">
+        <option value="">Tous types</option>
+        <option value="moteur">Moteur</option><option value="masque">Masque</option><option value="boite">Boîte</option>
+        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+    <div id="uniteList" class="grid grid-3"></div>
+  `;
+  loadUnites();
+  window.showMarquerUnite = showMarquerUnite;
+  window.showUniteDetail = showUniteDetail;
+}
+
+async function loadUnites() {
+  const container = $('#uniteList');
+  if (!container) return;
+  container.innerHTML = '<div class="skeleton skeleton-card" style="height:120px"></div>'.repeat(3);
+  try {
+    const type = $('#uniteTypeFilter')?.value || '';
+    const search = $('#uniteSearch')?.value || '';
+    let url = '/unites?';
+    if (type) url += `type=${type}&`;
+    if (search) url += `search=${encodeURIComponent(search)}`;
+    const units = await apiFetch(url);
+    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', autre: 'Autre' };
+    const etatClasses = { complet: 'badge-success', partiel: 'badge-warning', manquant: 'badge-danger', non_defini: 'badge-info' };
+    const etatLabels = { complet: 'Complet', partiel: 'Partiel', manquant: 'Manquant', non_defini: 'Non défini' };
+    container.innerHTML = units.length ? units.map(u => html`<div class="card">
+      <div class="card-header"><h3>${u.reference}</h3><span class="badge badge-neutral">${typeLabels[u.type_unite] || 'Unité'}</span></div>
+      <p style="margin-bottom:0.5rem;font-weight:500">${u.designation}</p>
+      <div class="stat-row" style="gap:0.5rem">
+        <div class="stat-item" style="padding:0.5rem"><div class="stat-value" style="font-size:1rem">${formatNumber(u.stock_unite || 0)}</div><div class="stat-label">Unités</div></div>
+        <div class="stat-item" style="padding:0.5rem"><div class="stat-value" style="font-size:1rem">${formatNumber(u.total_composants || 0)}</div><div class="stat-label">Pièces</div></div>
+        <div class="stat-item" style="padding:0.5rem"><div class="stat-value" style="font-size:1rem">${formatNumber(u.composants_disponibles || 0)}</div><div class="stat-label">Dispo</div></div>
+      </div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.3rem;flex-wrap:wrap">
+        <span class="badge ${etatClasses[u.etat] || 'badge-info'}">${etatLabels[u.etat] || u.etat}</span>
+        <span class="badge badge-info">${formatNumber(u.total_assemblages || 0)} assembl.</span>
+        <span class="badge badge-warning">${formatNumber(u.total_desassemblages || 0)} désass.</span>
+      </div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.3rem">
+        <button class="btn btn-sm btn-secondary" onclick="showUniteDetail(${u.id})">Détail</button>
+        ${u.etat === 'complet' ? `<button class="btn btn-sm btn-warning" onclick="showDesassemblerUnite(${u.id})">Désassembler</button>` : ''}
+        ${u.etat === 'complet' || u.etat === 'partiel' ? `<button class="btn btn-sm btn-success" onclick="showAssemblerUnite(${u.id})">Assembler +1</button>` : ''}
+      </div>
+    </div>`).join('') : '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔧</div><p>Aucune unité assemblable</p><p style="font-size:0.8rem">Marquez un article comme unité pour commencer</p></div>';
+  } catch { container.innerHTML = '<div class="empty-state">Erreur chargement</div>'; }
+}
+
+window.showMarquerUnite = async function() {
+  try {
+    const data = await apiFetch('/articles?actif=1&limit=200');
+    const articles = (data?.articles || []).filter(a => !a.est_moteur && !a.type_unite);
+    openModal('Marquer un article comme unité assemblable', html`
+      <div class="form-group"><label>Article</label><select id="marquerArticleId" class="form-select">${articles.map(a => html`<option value="${a.id}">${a.reference} - ${a.designation}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Type d'unité</label><select id="marquerTypeUnite" class="form-select">
+        <option value="moteur">Moteur</option><option value="masque">Masque</option><option value="boite">Boîte de vitesses</option>
+        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option>
+        <option value="autre">Autre</option>
+      </select></div>
+    `, html`
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmMarquerUnite()">Marquer</button>
+    `);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.confirmMarquerUnite = async function() {
+  const articleId = parseInt($('#marquerArticleId').value);
+  const typeUnite = $('#marquerTypeUnite').value;
+  if (!articleId) { showToast('Sélectionnez un article', 'error'); return; }
+  try {
+    await apiFetch(`/unites/${articleId}/marquer-unite`, { method: 'PUT', body: JSON.stringify({ type_unite: typeUnite }) });
+    showToast('Article marqué comme unité assemblable', 'success');
+    closeModal();
+    loadUnites();
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.showUniteDetail = async function(id) {
+  try {
+    const data = await apiFetch(`/unites/${id}`);
+    const { unite: u, nomenclature, assemblages, decompositions, ventes, mouvements } = data;
+    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', autre: 'Autre' };
+
+    let htmlContent = html`
+      <div class="stat-row" style="margin-bottom:1rem">
+        <div class="stat-item"><div class="stat-value">${typeLabels[u.type_unite] || 'Unité'}</div><div class="stat-label">Type</div></div>
+        <div class="stat-item"><div class="stat-value">${formatNumber(u.stock_unite || 0)}</div><div class="stat-label">En stock</div></div>
+        <div class="stat-item"><div class="stat-value">${formatNumber(nomenclature.length)}</div><div class="stat-label">Composants</div></div>
+      </div>`;
+
+    // Nomenclature
+    htmlContent += '<h4 style="margin:1rem 0 0.5rem">Nomenclature (BOM)</h4>';
+    htmlContent += '<table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Stock</th><th>Prix</th><th>Statut</th></tr></thead><tbody>';
+    htmlContent += nomenclature.length ? nomenclature.map(n => html`<tr><td>${n.reference}</td><td>${n.designation}</td><td>${formatNumber(n.quantite)}</td><td>${formatNumber(n.stock_actuel)}</td><td>${formatCurrency(n.prix_vente_ht)}</td><td>${n.statut_stock === 'disponible' ? '✅' : n.statut_stock === 'partiel' ? '⚠️' : '❌'} ${n.statut_stock}</td></tr>`).join('') : '<tr><td colspan="6">Aucune nomenclature définie</td></tr>';
+    htmlContent += '</tbody></table>';
+    htmlContent += `<div style="margin:0.5rem 0"><button class="btn btn-sm btn-secondary" onclick="ajouterPieceNomenclatureUnite(${u.id})">+ Ajouter pièce nomenclature</button></div>`;
+
+    // Assemblages
+    if (assemblages.length) {
+      htmlContent += '<h4 style="margin:1rem 0 0.5rem">Assemblages</h4><table><thead><tr><th>Date</th><th>Qté</th><th>Utilisateur</th><th>Motif</th><th>Pièces</th></tr></thead><tbody>';
+      htmlContent += assemblages.map(a => html`<tr><td>${formatDate(a.date_assemblage)}</td><td>${formatNumber(a.quantite)}</td><td>${a.utilisateur_nom || '-'}</td><td>${a.motif || '-'}</td><td>${a.lignes?.map(l => `${l.comp_ref} x${l.quantite}`).join(', ') || '-'}</td></tr>`).join('');
+      htmlContent += '</tbody></table>';
+    }
+
+    // Désassemblages
+    if (decompositions.length) {
+      htmlContent += '<h4 style="margin:1rem 0 0.5rem">Désassemblages</h4><table><thead><tr><th>Date</th><th>Utilisateur</th><th>Motif</th><th>Pièces extraites</th></tr></thead><tbody>';
+      htmlContent += decompositions.map(d => html`<tr><td>${formatDate(d.date_decomposition)}</td><td>${d.utilisateur_nom || '-'}</td><td>${d.motif || '-'}</td><td>${d.lignes?.map(l => `${l.comp_ref} x${l.quantite}`).join(', ') || '-'}</td></tr>`).join('');
+      htmlContent += '</tbody></table>';
+    }
+
+    // Ventes
+    if (ventes.length) {
+      htmlContent += '<h4 style="margin:1rem 0 0.5rem">Ventes de pièces</h4><table><thead><tr><th>Date</th><th>Client</th><th>Pièce</th><th>Qté</th><th>Prix</th><th>Document</th></tr></thead><tbody>';
+      htmlContent += ventes.map(v => html`<tr><td>${formatDate(v.date_document)}</td><td>${v.client_nom || '-'}</td><td>${v.designation || v.art_designation || '-'}</td><td>${formatNumber(v.quantite)}</td><td>${formatCurrency(v.montant_ht)} HT</td><td><span class="badge badge-info">${v.doc_numero}</span> ${v.type_document}</td></tr>`).join('');
+      htmlContent += '</tbody></table>';
+    }
+
+    // Actions
+    htmlContent += '<div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap">';
+    if ((u.stock_unite || 0) > 0) htmlContent += `<button class="btn btn-warning btn-sm" onclick="closeModal();showDesassemblerUnite(${u.id})">Désassembler</button>`;
+    htmlContent += `<button class="btn btn-success btn-sm" onclick="closeModal();showAssemblerUnite(${u.id})">Assembler</button>`;
+    htmlContent += '</div>';
+
+    openModal(`${u.reference} — ${u.designation}`, htmlContent, `<button class="btn btn-secondary" onclick="closeModal()">Fermer</button>`);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.showAssemblerUnite = async function(id) {
+  try {
+    const data = await apiFetch(`/unites/${id}`);
+    const { unite: u, nomenclature } = data;
+    const disponibles = nomenclature.filter(n => n.statut_stock !== 'manquant');
+
+    openModal(`Assembler ${u.reference}`, html`
+      <p>Pièces disponibles pour assembler :</p>
+      ${disponibles.length ? html`<div style="margin-top:0.5rem">${disponibles.map(n => html`
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border-light)">
+          <span style="flex:1">${n.reference} — ${n.designation}</span>
+          <span class="badge ${n.statut_stock === 'disponible' ? 'badge-success' : 'badge-warning'}">${n.statut_stock} (${formatNumber(n.stock_actuel)})</span>
+        </div>`).join('')}</div>` : '<p style="color:var(--danger)">Aucune pièce disponible</p>'}
+      <div class="form-group" style="margin-top:1rem"><label>Quantité à assembler</label><input id="assemblQte" type="number" class="form-control" value="1" min="1"></div>
+      <div class="form-group"><label>Motif</label><input id="assemblMotif" type="text" class="form-control" placeholder="Optionnel"></div>
+    `, html`
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-success" onclick="confirmAssembler(${id})">Assembler</button>
+    `);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.confirmAssembler = async function(id) {
+  const qte = parseInt($('#assemblQte').value) || 1;
+  const motif = $('#assemblMotif')?.value || '';
+  try {
+    await apiFetch(`/unites/${id}/assembler`, { method: 'POST', body: JSON.stringify({ quantite: qte, motif }) });
+    showToast('Unité assemblée', 'success');
+    closeModal();
+    loadUnites();
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.showDesassemblerUnite = async function(id) {
+  try {
+    const data = await apiFetch(`/unites/${id}`);
+    const { unite: u, nomenclature } = data;
+    const dispos = nomenclature.filter(n => n.stock_actuel > 0);
+
+    openModal(`Désassembler ${u.reference}`, html`
+      <p>Unités en stock : <strong>${formatNumber(u.stock_unite || 0)}</strong></p>
+      <p>Sélectionnez les pièces à extraire :</p>
+      <div id="desassUniteList" style="margin-top:0.5rem">${dispos.map(n => html`
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border-light)">
+          <input type="checkbox" class="desass-check" data-id="${n.composant_id}" checked style="flex-shrink:0">
+          <span style="flex:1">${n.reference} — ${n.designation}</span>
+          <input type="number" class="desass-qte form-control" value="${Math.min(n.stock_actuel, n.quantite)}" min="1" max="${Math.min(n.stock_actuel, n.quantite)}" style="width:70px">
+        </div>`).join('')}</div>
+      <div class="form-group" style="margin-top:0.5rem"><label>Motif</label><input id="desassMotif" type="text" class="form-control" placeholder="Optionnel"></div>
+    `, html`
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-warning" onclick="confirmDesassemblerUnite(${id})">Désassembler</button>
+    `);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.confirmDesassemblerUnite = async function(id) {
+  const checks = $$('.desass-check:checked');
+  const qtes = $$('.desass-qte');
+  const lignes = Array.from(checks).map((c, i) => ({ composant_id: parseInt(c.dataset.id), quantite: parseInt(qtes[i]?.value) || 1 }));
+  if (!lignes.length) { showToast('Sélectionnez au moins une pièce', 'error'); return; }
+  const motif = $('#desassMotif')?.value || '';
+  try {
+    await apiFetch(`/unites/${id}/desassembler`, { method: 'POST', body: JSON.stringify({ lignes, motif }) });
+    showToast('Unité désassemblée', 'success');
+    closeModal();
+    loadUnites();
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.ajouterPieceNomenclatureUnite = async function(id) {
+  try {
+    const data = await apiFetch('/articles?actif=1&limit=200');
+    const unite = await apiFetch(`/unites/${id}`);
+    const idsNom = unite.nomenclature.map(n => n.composant_id);
+    const disponibles = (data?.articles || []).filter(a => !idsNom.includes(a.id) && a.id !== id);
+
+    openModal('Ajouter pièce à la nomenclature', html`
+      <div class="form-group"><label>Pièce</label><select id="nomPieceId" class="form-select">${disponibles.map(a => html`<option value="${a.id}">${a.reference} — ${a.designation} (stock: ${formatNumber(a.stock_actuel)})</option>`).join('')}</select></div>
+      <div class="form-group"><label>Quantité</label><input id="nomQte" type="number" class="form-control" value="1" min="1"></div>
+    `, html`
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmAjouterPieceUnite(${id})">Ajouter</button>
+    `);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.confirmAjouterPieceUnite = async function(id) {
+  const composant_id = parseInt($('#nomPieceId').value);
+  const quantite = parseInt($('#nomQte').value) || 1;
+  if (!composant_id) { showToast('Sélectionnez une pièce', 'error'); return; }
+  try {
+    await apiFetch(`/unites/${id}/nomenclature`, { method: 'POST', body: JSON.stringify({ composant_id, quantite }) });
+    showToast('Pièce ajoutée', 'success');
+    closeModal();
+    setTimeout(() => showUniteDetail(id), 300);
+  } catch (e) { showToast(e.message, 'error'); }
+};
 
 // ==================== CLIENTS ====================
 function renderClients(page) {

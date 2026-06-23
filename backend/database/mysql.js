@@ -578,6 +578,56 @@ async function createTables() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_doc_source ON documents(document_source_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_ligne_source ON documents_lignes(source_unit_id)`);
   } catch (e) { /* already exists */ }
+
+  // ============================================================
+  // MODULE ASSEMBLAGE / DEMONTABLE
+  // ============================================================
+
+  // Migration: colonnes type_unite et stock_unite dans articles
+  try { await pool.query(`ALTER TABLE articles ADD COLUMN type_unite VARCHAR(50) DEFAULT NULL AFTER est_moteur`); } catch (e) { /* exists */ }
+  try { await pool.query(`ALTER TABLE articles ADD COLUMN stock_unite INT DEFAULT 0 AFTER stock_actuel`); } catch (e) { /* exists */ }
+
+  // Migration: renommer moteur_id en parent_article_id dans decompositions (générique)
+  try { await pool.query(`ALTER TABLE decompositions CHANGE COLUMN moteur_id parent_article_id INT NOT NULL`); } catch (e) { /* exists or already renamed */ }
+
+  // Migration: table assemblages
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS assemblages (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      unite_parent_id INT NOT NULL,
+      date_assemblage DATETIME DEFAULT CURRENT_TIMESTAMP,
+      quantite INT NOT NULL DEFAULT 1,
+      utilisateur_id INT,
+      motif TEXT,
+      statut VARCHAR(50) DEFAULT 'termine',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (unite_parent_id) REFERENCES articles(id),
+      FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  } catch (e) { /* already exists */ }
+
+  // Migration: table assemblages_lignes
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS assemblages_lignes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      assemblage_id INT NOT NULL,
+      composant_id INT NOT NULL,
+      quantite INT NOT NULL DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (assemblage_id) REFERENCES assemblages(id) ON DELETE CASCADE,
+      FOREIGN KEY (composant_id) REFERENCES articles(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  } catch (e) { /* already exists */ }
+
+  // Migration: ajouter parent_article_id dans decompositions_lignes
+  try { await pool.query(`ALTER TABLE decompositions_lignes ADD COLUMN stock_apres REAL DEFAULT NULL AFTER quantite`); } catch (e) { /* exists */ }
+
+  // Migration: indexes assemblage/déassembly
+  try {
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_assembl_parent ON assemblages(unite_parent_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_assembl_ligne ON assemblages_lignes(assemblage_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_decomp_parent ON decompositions(parent_article_id)`);
+  } catch (e) { /* already exists */ }
 }
 
 async function seedData() {
