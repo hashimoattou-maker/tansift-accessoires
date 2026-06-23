@@ -77,7 +77,7 @@ module.exports = function(db) {
       `).all(req.params.id);
 
       // Mouvements de stock
-      const mouvements = await db.prepare(`SELECT m.*, a.reference, a.designation FROM mouvements_stock m LEFT JOIN articles a ON m.article_id = a.id WHERE m.source_unit_id = ? OR (m.document_type IN ('assemblage','desassemblage') AND m.motif LIKE ?) ORDER BY m.date_mouvement DESC LIMIT 50`)
+      const mouvements = await db.prepare(`SELECT m.*, a.reference, a.designation FROM mouvements_stock m LEFT JOIN articles a ON m.article_id = a.id WHERE m.source_unit_id = ? OR (m.document_type IN ('assemblage','desassemblage') AND m.motif LIKE ?) ORDER BY m.created_at DESC LIMIT 50`)
         .all(req.params.id, `%${unit.reference}%`);
 
       res.json({ unite: unit, nomenclature, assemblages, decompositions, ventes, mouvements });
