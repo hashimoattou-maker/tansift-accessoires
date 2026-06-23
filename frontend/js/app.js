@@ -1538,7 +1538,7 @@ async function loadDocuments(type) {
         <td>${formatCurrency(d.net_a_payer)}</td>
         <td><span class="badge ${statusBadge[d.statut] || 'badge-neutral'}">${d.statut}</span></td>
         <td class="table-actions">
-          <button class="btn btn-sm btn-secondary" onclick="editDocument(${d.id})" title="Voir">✏️</button>
+          <button class="btn btn-sm btn-secondary" onclick="editDocument(${d.id})" title="Modifier">✏️</button>
           <button class="btn btn-sm btn-secondary" onclick="printDocument(${d.id})" title="Imprimer">🖨️</button>
           ${['devis','bon_commande_client','bon_livraison','demande_achat','commande_fournisseur','bon_reception'].includes(d.type_document) && d.statut !== 'annule' ? `<button class="btn btn-sm btn-primary" onclick="transfertDocument(${d.id})" title="Transférer vers le type suivant">🔄</button>` : ''}
           <button class="btn btn-sm ${d.statut === 'brouillon' ? 'btn-success' : 'btn-secondary'}" onclick="changeDocStatut(${d.id}, '${d.statut}')" title="Changer statut">➡️</button>
@@ -1812,6 +1812,7 @@ async function saveDocument(e, type) {
 
 function editDocument(id) {
   apiFetch(`/documents/${id}`).then(d => {
+    const canEdit = d.statut !== 'paye' && d.statut !== 'annule';
     let htmlContent = html`
       <div class="stat-row"><div class="stat-item"><div class="stat-value">${d.numero}</div><div class="stat-label">Document</div></div>
       <div class="stat-item"><div class="stat-value">${formatDate(d.date_document)}</div><div class="stat-label">Date</div></div>
@@ -1825,20 +1826,180 @@ function editDocument(id) {
         }).join('')}
       </div>
       <h4 style="margin:1rem 0 0.5rem">Lignes</h4>
-      <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Unité source</th><th>Qté</th><th>PU HT</th><th>TVA</th><th>Total HT</th></tr></thead>
-      <tbody>${d.lignes?.length ? d.lignes.map(l => html`<tr><td>${l.reference || l.art_reference || '-'}</td><td>${l.designation || l.art_designation || '-'}</td><td>${l.source_unit_designation ? `<span class="badge badge-info">${l.source_unit_designation}</span>` : '-'}</td><td>${formatNumber(l.quantite)}</td><td>${formatCurrency(l.prix_unitaire_ht)}</td><td>${l.taux_tva}%</td><td><strong>${formatCurrency(l.montant_ht)}</strong></td></tr>`).join('') : '<tr><td colspan="7">Aucune ligne</td></tr>'}</tbody>
-      <tfoot><tr><td colspan="6" style="text-align:right;font-weight:600">Total HT:</td><td>${formatCurrency(d.montant_ht)}</td></tr>
-      <tr><td colspan="6" style="text-align:right">TVA:</td><td>${formatCurrency(d.total_tva)}</td></tr>
-      <tr><td colspan="6" style="text-align:right;font-weight:700;font-size:1rem">NET À PAYER:</td><td style="font-weight:700;font-size:1rem;color:var(--accent)">${formatCurrency(d.net_a_payer)}</td></tr></tfoot></table>
-      ${d.notes ? html`<div class="form-group" style="margin-top:1rem"><label>Notes</label><textarea class="form-textarea" readonly>${d.notes}</textarea></div>` : ''}
+      <table id="editDocTable"><thead><tr><th>Réf.</th><th>Désignation</th><th>Unité source</th>${canEdit ? '<th>Qté</th><th>PU HT</th><th>TVA %</th>' : '<th>Qté</th><th>PU HT</th><th>TVA</th>'}<th>Total HT</th>${canEdit ? '<th></th>' : ''}</tr></thead>
+      <tbody id="editDocLignes">${d.lignes?.length ? d.lignes.map(l => editLigneRow(l, canEdit)).join('') : '<tr><td colspan="8">Aucune ligne</td></tr>'}</tbody>
+      <tfoot id="editDocFoot"><tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right;font-weight:600">Total HT:</td><td id="editTotalHT">${formatCurrency(d.montant_ht)}</td>${canEdit ? '<td></td>' : ''}</tr>
+      <tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right">TVA:</td><td id="editTotalTVA">${formatCurrency(d.total_tva)}</td>${canEdit ? '<td></td>' : ''}</tr>
+      <tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right;font-weight:700;font-size:1rem">NET À PAYER:</td><td id="editTotalTTC" style="font-weight:700;font-size:1rem;color:var(--accent)">${formatCurrency(d.net_a_payer)}</td>${canEdit ? '<td></td>' : ''}</tr></tfoot></table>
+      ${canEdit ? '<button class="btn btn-sm btn-secondary" onclick="addEditDocLigne(' + id + ')" style="margin-top:0.3rem">+ Ajouter ligne</button>' : ''}
+      ${d.notes ? html`<div class="form-group" style="margin-top:1rem"><label>Notes</label><textarea class="form-textarea" id="editDocNotes" ${canEdit ? '' : 'readonly'}>${d.notes}</textarea></div>` : ''}
     `;
 
     openModal(`Document: ${d.numero}`, htmlContent, html`
       <button class="btn btn-sm btn-secondary" onclick="closeModal()">Fermer</button>
-      ${d.statut !== 'paye' && d.statut !== 'annule' ? `<button class="btn btn-sm btn-success" onclick="changeDocStatut(${d.id}, '${d.statut}');closeModal()">➡️ Statut suivant</button>` : ''}
-      <button class="btn btn-sm btn-primary" onclick="printDocument(${d.id});closeModal()">🖨️ Imprimer PDF</button>
+      ${canEdit ? `<button class="btn btn-sm btn-success" onclick="changeDocStatut(${d.id}, '${d.statut}');closeModal()">➡️ Statut suivant</button>` : ''}
+      ${canEdit ? `<button class="btn btn-sm btn-primary" onclick="saveEditDocument(${d.id})">💾 Enregistrer</button>` : ''}
+      <button class="btn btn-sm btn-secondary" onclick="printDocument(${d.id});closeModal()">🖨️ Imprimer</button>
     `);
   });
+}
+
+function editLigneRow(l, canEdit) {
+  if (canEdit) {
+    return html`<tr data-ligne-id="${l.id}">
+      <td>${l.reference || l.art_reference || '-'}</td>
+      <td>${l.designation || l.art_designation || '-'}</td>
+      <td>${l.source_unit_designation ? `<span class="badge badge-info">${l.source_unit_designation}</span>` : '-'}</td>
+      <td><input type="number" class="form-control edit-qte" value="${l.quantite}" min="1" style="width:60px" oninput="recalcEditDoc()"></td>
+      <td><input type="number" class="form-control edit-prix" value="${l.prix_unitaire_ht}" step="0.01" style="width:90px" oninput="recalcEditDoc()" data-taux-tva="${l.taux_tva || 20}"></td>
+      <td><input type="number" class="form-control edit-tva" value="${l.taux_tva || 20}" step="0.1" style="width:60px" oninput="recalcEditDoc()"></td>
+      <td class="edit-ht">${formatCurrency(l.montant_ht)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeEditLigne(this, ${l.id})">✕</button></td>
+    </tr>`;
+  }
+  return html`<tr><td>${l.reference || l.art_reference || '-'}</td><td>${l.designation || l.art_designation || '-'}</td><td>${l.source_unit_designation ? `<span class="badge badge-info">${l.source_unit_designation}</span>` : '-'}</td><td>${formatNumber(l.quantite)}</td><td>${formatCurrency(l.prix_unitaire_ht)}</td><td>${l.taux_tva}%</td><td><strong>${formatCurrency(l.montant_ht)}</strong></td></tr>`;
+}
+
+function recalcEditDoc() {
+  const rows = $$('#editDocLignes tr[data-ligne-id]');
+  let totalHT = 0, totalTVA = 0;
+  rows.forEach(r => {
+    const qte = parseFloat(r.querySelector('.edit-qte')?.value) || 1;
+    const prix = parseFloat(r.querySelector('.edit-prix')?.value) || 0;
+    const tva = parseFloat(r.querySelector('.edit-tva')?.value) || 20;
+    const ht = prix * qte;
+    const tvaMontant = ht * tva / 100;
+    totalHT += ht;
+    totalTVA += tvaMontant;
+    const htCell = r.querySelector('.edit-ht');
+    if (htCell) htCell.textContent = formatCurrency(ht);
+  });
+  const h = $('#editTotalHT'); if (h) h.textContent = formatCurrency(totalHT);
+  const t = $('#editTotalTVA'); if (t) t.textContent = formatCurrency(totalTVA);
+  const n = $('#editTotalTTC'); if (n) n.textContent = formatCurrency(totalHT + totalTVA);
+}
+
+window.removeEditLigne = async function(btn, ligneId) {
+  const tr = btn.closest('tr');
+  if (ligneId && !String(ligneId).startsWith('new_')) {
+    tr.dataset.deleted = 'true';
+    tr.style.opacity = '0.3';
+    tr.querySelectorAll('input').forEach(i => i.disabled = true);
+  } else {
+    tr.remove();
+  }
+  recalcEditDoc();
+};
+
+window.addEditDocLigne = async function(docId) {
+  const tbody = $('#editDocLignes');
+  const tr = document.createElement('tr');
+  tr.dataset.ligneId = 'new_' + Date.now();
+  tr.innerHTML = `<td><input type="text" class="form-control edit-ref-search" placeholder="Rechercher..." oninput="searchEditArticle(this)" autocomplete="off"><div class="autocomplete-results"></div></td>
+    <td class="edit-des-cell">-</td>
+    <td>-</td>
+    <td><input type="number" class="form-control edit-qte" value="1" min="1" style="width:60px" oninput="recalcEditDoc()"></td>
+    <td><input type="number" class="form-control edit-prix" value="0" step="0.01" style="width:90px" oninput="recalcEditDoc()" data-taux-tva="20" data-article-id=""></td>
+    <td><input type="number" class="form-control edit-tva" value="20" step="0.1" style="width:60px" oninput="recalcEditDoc()"></td>
+    <td class="edit-ht">0,00 MAD</td>
+    <td><button class="btn btn-sm btn-danger" onclick="removeEditLigne(this, null)">✕</button></td>`;
+  tbody.appendChild(tr);
+  window.searchEditArticle = searchEditArticle;
+  window.selectEditArticle = selectEditArticle;
+};
+
+function searchEditArticle(input) {
+  clearTimeout(input._searchTimeout);
+  const val = input.value.trim();
+  const wrap = input.closest('td');
+  const results = wrap?.querySelector('.autocomplete-results');
+  if (!results) return;
+  if (val.length < 2) { results.classList.remove('show'); return; }
+  input._searchTimeout = setTimeout(async () => {
+    try {
+      const data = await apiFetch('/articles?search=' + encodeURIComponent(val) + '&limit=10&actif=1');
+      if (!data?.articles?.length) {
+        results.innerHTML = '<div class="autocomplete-item" style="color:var(--text-light)">Aucun article</div>';
+        results.classList.add('show'); return;
+      }
+      results.innerHTML = data.articles.map(a => {
+        const taux = a.taux_tva_value || 20;
+        return `<div class="autocomplete-item" onclick="selectEditArticle(this, ${a.id}, '${(a.reference||'').replace(/'/g,"\\'")}', '${(a.designation||'').replace(/'/g,"\\'")}', ${a.prix_vente_ht||0}, ${taux})">
+          <div><span class="ref">${a.reference}</span> - ${a.designation}</div>
+          <div><span class="price">${formatCurrency((a.prix_vente_ht||0)*(1+taux/100))} MAD TTC</span></div>
+        </div>`;
+      }).join('');
+      results.classList.add('show');
+    } catch { results.classList.remove('show'); }
+  }, 300);
+}
+
+window.selectEditArticle = function(el, id, ref, des, pv, taux) {
+  const tr = el.closest('tr');
+  tr.dataset.newArticleId = id;
+  const desCell = tr.querySelector('.edit-des-cell');
+  if (desCell) desCell.textContent = des;
+  const refInput = tr.querySelector('.edit-ref-search');
+  if (refInput) refInput.value = ref;
+  const prixInput = tr.querySelector('.edit-prix');
+  if (prixInput) { prixInput.value = pv; prixInput.dataset.tauxTva = taux; prixInput.dataset.articleId = id; }
+  const tvaInput = tr.querySelector('.edit-tva');
+  if (tvaInput) tvaInput.value = taux;
+  recalcEditDoc();
+  const results = tr.querySelector('.autocomplete-results');
+  if (results) results.classList.remove('show');
+};
+
+async function saveEditDocument(docId) {
+  try {
+    const rows = $$('#editDocLignes tr[data-ligne-id]');
+    const promises = [];
+
+    for (const r of rows) {
+      if (r.dataset.deleted === 'true') {
+        const ligneId = r.dataset.ligneId;
+        promises.push(apiFetch(`/documents/${docId}/lignes/${ligneId}`, { method: 'DELETE' }));
+        continue;
+      }
+
+      const ligneId = r.dataset.ligneId;
+      const qte = parseFloat(r.querySelector('.edit-qte')?.value) || 1;
+      const prix = parseFloat(r.querySelector('.edit-prix')?.value) || 0;
+      const tva = parseFloat(r.querySelector('.edit-tva')?.value) || 20;
+
+      if (ligneId && !ligneId.startsWith('new_')) {
+        promises.push(apiFetch(`/documents/${docId}/lignes/${ligneId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ quantite: qte, prix_unitaire_ht: prix, taux_tva: tva })
+        }));
+      } else {
+        const articleId = r.querySelector('.edit-prix')?.dataset?.articleId || r.dataset.newArticleId;
+        if (articleId) {
+          promises.push(apiFetch(`/documents/${docId}/lignes`, {
+            method: 'POST',
+            body: JSON.stringify({ article_id: parseInt(articleId), quantite: qte, prix_unitaire_ht: prix, taux_tva: tva })
+          }));
+        }
+      }
+    }
+
+    await Promise.all(promises);
+
+    const notesEl = $('#editDocNotes');
+    if (notesEl) {
+      await apiFetch(`/documents/${docId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ notes: notesEl.value })
+      });
+    }
+
+    showToast('Document enregistré', 'success');
+    closeModal();
+    const route = document.querySelector('[data-route^="documents"]')?.dataset?.route || '';
+    loadDocuments(route.includes('achats') ? 'achats' : 'ventes');
+  } catch (e) {
+    showToast('Erreur: ' + e.message, 'error');
+  }
 }
 
 async function changeDocStatut(id, currentStatut) {
@@ -2686,6 +2847,7 @@ async function loadNotifications() {
   'showPaiementForm','loadSituation','exportSoldes','savePaiement',
   'showFournisseurForm','editFournisseur','showFournisseurDetail','loadFournisseurs','saveFournisseur',
   'showDocumentForm','editDocument','printDocument','changeDocStatut','loadDocuments','saveDocument',
+  'saveEditDocument','addEditDocLigne','removeEditLigne','recalcEditDoc','searchEditArticle','selectEditArticle',
   'addDocLigne','removeLigne','searchDocArticle','selectDocArticle','scanDocBarcode',
   'scanBarcode','generateLabel','previewLabel','printBulkLabels','transfertDocument',
   'generateReport','exportZip','saveSociete','saveConfiguration','saveUser','editUser','showUserForm','switchParamTab','backupDB','restoreDB','confirmRestore','uploadLogo','deleteLogo',

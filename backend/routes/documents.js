@@ -218,6 +218,44 @@ module.exports = function(db) {
     }
   });
 
+  // PUT /api/documents/:id/lignes/:ligneId - modifier une ligne
+  router.put('/:id/lignes/:ligneId', async (req, res) => {
+    try {
+      const doc = await db.prepare(`SELECT * FROM documents WHERE id = ?`).get(req.params.id);
+      if (!doc) return res.status(404).json({ error: 'Document introuvable' });
+      if (doc.statut === 'paye' || doc.statut === 'annule') return res.status(400).json({ error: 'Document payé ou annulé' });
+
+      const ligne = await db.prepare(`SELECT * FROM documents_lignes WHERE id = ? AND document_id = ?`).get(req.params.ligneId, req.params.id);
+      if (!ligne) return res.status(404).json({ error: 'Ligne introuvable' });
+
+      const { quantite, prix_unitaire_ht, remise_pourcent, taux_tva, designation, reference } = req.body;
+      const qte = quantite != null ? quantite : ligne.quantite;
+      const prix = prix_unitaire_ht != null ? prix_unitaire_ht : ligne.prix_unitaire_ht;
+      const remise = remise_pourcent != null ? remise_pourcent : ligne.remise_pourcent;
+      const tva = taux_tva != null ? taux_tva : ligne.taux_tva;
+      const montantHT = prix * qte * (1 - remise / 100);
+      const montantTVA = montantHT * tva / 100;
+      const montantTTC = montantHT + montantTVA;
+
+      let marge = ligne.marge_brute;
+      if (ligne.article_id) {
+        const article = await db.prepare(`SELECT prix_achat_ht FROM articles WHERE id = ?`).get(ligne.article_id);
+        if (article) marge = prix - article.prix_achat_ht;
+      }
+
+      await db.prepare(`UPDATE documents_lignes SET quantite = ?, prix_unitaire_ht = ?, remise_pourcent = ?, taux_tva = ?, montant_ht = ?, montant_tva = ?, montant_ttc = ?, marge_brute = ?, designation = COALESCE(?, designation), reference = COALESCE(?, reference) WHERE id = ?`)
+        .run(qte, prix, remise, tva, montantHT, montantTVA, montantTTC, marge, designation || null, reference || null, ligne.id);
+
+      const rows = await db.prepare(`SELECT SUM(montant_ht) as totalHT, SUM(montant_tva) as totalTVA, SUM(montant_ttc) as totalTTC FROM documents_lignes WHERE document_id = ?`).get(doc.id);
+      await db.prepare(`UPDATE documents SET montant_ht = ?, total_tva = ?, montant_ttc = ?, net_a_payer = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+        .run(rows.totalHT || 0, rows.totalTVA || 0, rows.totalTTC || 0, rows.totalTTC || 0, doc.id);
+
+      res.json({ success: true, montant_ht: montantHT, montant_ttc: montantTTC });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // PUT /api/documents/:id/statut
   router.put('/:id/statut', async (req, res) => {
     try {
@@ -232,6 +270,27 @@ module.exports = function(db) {
       }
 
       await auditLog(db, req.user?.id, 'CHANGEMENT_STATUT', doc.type_document, req.params.id, { ancien: doc.statut, nouveau: statut });
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // PUT /api/documents/:id - modifier les métadonnées du document (notes, client, etc.)
+  router.put('/:id', async (req, res) => {
+    try {
+      const doc = await db.prepare(`SELECT * FROM documents WHERE id = ?`).get(req.params.id);
+      if (!doc) return res.status(404).json({ error: 'Document introuvable' });
+      if (doc.statut === 'paye' || doc.statut === 'annule') return res.status(400).json({ error: 'Document payé ou annulé' });
+
+      const { client_id, fournisseur_id, notes, conditions_paiement, adresse_livraison } = req.body;
+      await db.prepare(`UPDATE documents SET client_id = COALESCE(?, client_id), fournisseur_id = COALESCE(?, fournisseur_id), notes = COALESCE(?, notes), conditions_paiement = COALESCE(?, conditions_paiement), adresse_livraison = COALESCE(?, adresse_livraison), updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+        .run(client_id !== undefined ? client_id : null, fournisseur_id !== undefined ? fournisseur_id : null, notes !== undefined ? notes : null, conditions_paiement !== undefined ? conditions_paiement : null, adresse_livraison !== undefined ? adresse_livraison : null, doc.id);
+
+      if (doc.client_id && ['facture_client', 'avoir_client'].includes(doc.type_document)) {
+        await updateClientSolde(db, doc.client_id);
+      }
+
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: e.message });
