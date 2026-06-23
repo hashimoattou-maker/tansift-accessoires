@@ -795,8 +795,8 @@ window.showUniteDetail = async function(id) {
 
     // Nomenclature
     htmlContent += '<h4 style="margin:1rem 0 0.5rem">Nomenclature (BOM)</h4>';
-    htmlContent += '<table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Stock</th><th>Prix</th><th>Statut</th></tr></thead><tbody>';
-    htmlContent += nomenclature.length ? nomenclature.map(n => html`<tr><td>${n.reference}</td><td>${n.designation}</td><td>${formatNumber(n.quantite)}</td><td>${formatNumber(n.stock_actuel)}</td><td>${formatCurrency(n.prix_vente_ht)}</td><td>${n.statut_stock === 'disponible' ? '✅' : n.statut_stock === 'partiel' ? '⚠️' : '❌'} ${n.statut_stock}</td></tr>`).join('') : '<tr><td colspan="6">Aucune nomenclature définie</td></tr>';
+    htmlContent += '<table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Stock</th><th>Prix</th><th>Statut</th><th></th></tr></thead><tbody>';
+    htmlContent += nomenclature.length ? nomenclature.map(n => html`<tr><td>${n.reference}</td><td>${n.designation}</td><td>${formatNumber(n.quantite)}</td><td>${formatNumber(n.stock_actuel)}</td><td>${formatCurrency(n.prix_vente_ht)}</td><td>${n.statut_stock === 'disponible' ? '✅' : n.statut_stock === 'partiel' ? '⚠️' : '❌'} ${n.statut_stock}</td><td><button class="btn btn-sm btn-danger" onclick="supprimerPieceNomenclature(${u.id}, ${n.composant_id}, '${(n.reference||'').replace(/'/g,"\\'")}')">✕</button></td></tr>`).join('') : '<tr><td colspan="7">Aucune nomenclature définie</td></tr>';
     htmlContent += '</tbody></table>';
     htmlContent += `<div style="margin:0.5rem 0"><button class="btn btn-sm btn-secondary" onclick="ajouterPieceNomenclatureUnite(${u.id})">+ Ajouter pièce nomenclature</button></div>`;
 
@@ -1076,6 +1076,15 @@ window.confirmAjouterPieceUnite = async function(id) {
     showToast('Pièce ajoutée', 'success');
     closeModal();
     setTimeout(() => showUniteDetail(id), 300);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.supprimerPieceNomenclature = async function(uniteId, composantId, reference) {
+  if (!confirm(`Supprimer "${reference}" de la nomenclature ?`)) return;
+  try {
+    await apiFetch(`/unites/${uniteId}/nomenclature/${composantId}`, { method: 'DELETE' });
+    showToast('Pièce supprimée de la nomenclature', 'success');
+    setTimeout(() => showUniteDetail(uniteId), 300);
   } catch (e) { showToast(e.message, 'error'); }
 };
 
@@ -2969,7 +2978,7 @@ async function loadNotifications() {
   'generateReport','exportZip','saveSociete','saveConfiguration','saveUser','editUser','showUserForm','switchParamTab','backupDB','restoreDB','confirmRestore','uploadLogo','deleteLogo',
   'renderArticles','renderDashboard','renderMoteurs','renderClients','renderSituation','renderFournisseurs','renderBarcodes','renderRapports','renderParametres','renderAudit','renderPage','renderBreadcrumb',
   'login','logout','checkAuth','apiFetch','html',
-  'searchNomPiece','selectNomPiece','searchMarquerArticle','selectMarquerArticle',
+  'searchNomPiece','selectNomPiece','searchMarquerArticle','selectMarquerArticle','supprimerPieceNomenclature',
   'quickSale'
 ].forEach(name => {
   if (typeof window[name] === 'undefined' && typeof eval(name) !== 'undefined') {

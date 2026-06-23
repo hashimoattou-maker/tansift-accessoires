@@ -76,6 +76,10 @@ module.exports = function(db) {
               await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_id, document_type, document_numero, source_unit_id, client_id, utilisateur_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
                 .run(ligne.article_id, 'sortie', qte, article.stock_actuel, stockApres, docId, type_document, numero, ligne.source_unit_id || null, client_id || null, req.user?.id);
               await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(stockApres, ligne.article_id);
+
+              if (stockApres <= 0) {
+                await db.prepare(`DELETE FROM nomenclature_moteur WHERE composant_id = ?`).run(ligne.article_id);
+              }
             }
             await db.run('COMMIT');
           } catch (txError) {
@@ -416,6 +420,10 @@ module.exports = function(db) {
             await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_id, document_type, document_numero, source_unit_id, client_id, utilisateur_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
               .run(l.article_id, 'sortie', qte, article.stock_actuel, stockApres, newDocId, nextType, numero, l.source_unit_id || null, doc.client_id, req.user?.id);
             await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(stockApres, l.article_id);
+
+            if (stockApres <= 0) {
+              await db.prepare(`DELETE FROM nomenclature_moteur WHERE composant_id = ?`).run(l.article_id);
+            }
           }
           await db.run('COMMIT');
         } catch (txError) {
@@ -445,6 +453,7 @@ module.exports = function(db) {
         await db.prepare(`DELETE FROM imputations_paiements WHERE document_id = ?`).run(req.params.id);
         await db.prepare(`DELETE FROM garanties WHERE document_id = ?`).run(req.params.id);
         await db.prepare(`DELETE FROM mouvements_stock WHERE document_id = ?`).run(req.params.id);
+        await db.prepare(`DELETE FROM paiements_clients WHERE document_id = ?`).run(req.params.id);
         await db.prepare(`DELETE FROM documents_lignes WHERE document_id = ?`).run(req.params.id);
         await db.prepare(`DELETE FROM documents WHERE id = ?`).run(req.params.id);
         await db.run('COMMIT');
