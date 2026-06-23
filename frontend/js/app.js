@@ -695,7 +695,7 @@ async function loadUnites() {
         </div>
       </div>
       <div style="border-top:1px solid var(--border-light);margin-top:0.75rem;padding:0.75rem 1rem;text-align:center">
-        <div style="font-size:1.4rem;font-weight:700;${u.composants_disponibles === u.total_composants ? 'color:var(--success)' : u.composants_disponibles > 0 ? 'color:var(--warning)' : 'color:var(--danger)'}">${formatNumber(u.composants_disponibles || 0)}/${formatNumber(u.total_composants || 0)}</div>
+        <div style="font-size:1.4rem;font-weight:700;${u.composants_disponibles === u.total_composants ? 'color:var(--success)' : u.composants_disponibles > 0 ? 'color:var(--warning)' : 'color:var(--danger)'}">${formatNumber(u.composants_disponibles || 0)}</div>
         <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light)">Composants disponibles</div>
       </div>
       <div style="padding:0.75rem 1rem;border-top:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between">
