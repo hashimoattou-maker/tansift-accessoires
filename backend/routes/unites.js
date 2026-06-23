@@ -292,6 +292,22 @@ module.exports = function(db) {
   });
 
   // ============================================================
+  // SUPPRIMER le statut unité (l'article reste, juste le flag est retiré)
+  // ============================================================
+  router.delete('/:id/supprimer', async (req, res) => {
+    try {
+      const unit = await db.prepare(`SELECT * FROM articles WHERE id = ? AND (est_moteur = 1 OR type_unite IS NOT NULL)`).get(req.params.id);
+      if (!unit) return res.status(404).json({ error: 'Unité introuvable' });
+
+      await db.prepare(`UPDATE articles SET est_moteur = 0, type_unite = NULL WHERE id = ?`).run(req.params.id);
+      await auditLog(db, req.user?.id, 'SUPPRESSION', 'unite', req.params.id, { reference: unit.reference });
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ============================================================
   // TYPES d'unités disponibles
   // ============================================================
   router.get('/meta/types', async (req, res) => {

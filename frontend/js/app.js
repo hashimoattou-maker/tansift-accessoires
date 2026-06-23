@@ -688,6 +688,7 @@ async function loadUnites() {
       </div>
       <div style="margin-top:0.5rem;display:flex;gap:0.3rem">
         <button class="btn btn-sm btn-secondary" onclick="showUniteDetail(${u.id})">Détail</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteUnite(${u.id}, '${u.reference}')">Supprimer</button>
         ${u.etat === 'complet' ? `<button class="btn btn-sm btn-warning" onclick="showDesassemblerUnite(${u.id})">Désassembler</button>` : ''}
         ${u.etat === 'complet' || u.etat === 'partiel' ? `<button class="btn btn-sm btn-success" onclick="showAssemblerUnite(${u.id})">Assembler +1</button>` : ''}
       </div>
@@ -872,6 +873,15 @@ window.confirmAjouterPieceUnite = async function(id) {
     showToast('Pièce ajoutée', 'success');
     closeModal();
     setTimeout(() => showUniteDetail(id), 300);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.deleteUnite = async function(id, reference) {
+  if (!confirm(`Retirer "${reference}" des unités assemblables ?\n(L'article ne sera pas supprimé, seulement le statut unité)`)) return;
+  try {
+    await apiFetch(`/unites/${id}/supprimer`, { method: 'DELETE' });
+    showToast('Unité retirée', 'success');
+    loadUnites();
   } catch (e) { showToast(e.message, 'error'); }
 };
 
