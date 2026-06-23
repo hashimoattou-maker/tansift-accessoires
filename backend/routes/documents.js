@@ -442,6 +442,9 @@ module.exports = function(db) {
 
       await db.run('START TRANSACTION');
       try {
+        await db.prepare(`DELETE FROM imputations_paiements WHERE document_id = ?`).run(req.params.id);
+        await db.prepare(`DELETE FROM garanties WHERE document_id = ?`).run(req.params.id);
+        await db.prepare(`DELETE FROM mouvements_stock WHERE document_id = ?`).run(req.params.id);
         await db.prepare(`DELETE FROM documents_lignes WHERE document_id = ?`).run(req.params.id);
         await db.prepare(`DELETE FROM documents WHERE id = ?`).run(req.params.id);
         await db.run('COMMIT');
