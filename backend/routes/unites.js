@@ -176,15 +176,9 @@ module.exports = function(db) {
           if (!article) continue;
 
           const qte = ligne.quantite || 1;
-          const newStock = article.stock_actuel + qte;
 
           await db.prepare(`INSERT INTO decompositions_lignes (decomposition_id, composant_id, quantite, stock_apres) VALUES (?,?,?,?)`)
-            .run(decompId, ligne.composant_id, qte, newStock);
-
-          await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_type, utilisateur_id, motif) VALUES (?,?,?,?,?,?,?,?)`)
-            .run(ligne.composant_id, 'entree', qte, article.stock_actuel, newStock, 'desassemblage', req.user?.id, `Désassemblage ${unit.reference}`);
-
-          await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(newStock, ligne.composant_id);
+            .run(decompId, ligne.composant_id, qte, article.stock_actuel);
         }
 
         // Retirer du stock unité
