@@ -198,7 +198,7 @@ module.exports = function(db) {
       }
 
       await auditLog(db, req.user?.id, 'DESASSEMBLAGE', 'article', req.params.id, { lignes });
-      res.json({ success: true, stock_unite_apres: unit.stock_unite - 1 });
+      res.json({ success: true, stock_unite_apres: unit.stock_unite - 1, pieces_extraites: lignes.map(l => ({ composant_id: l.composant_id, quantite: l.quantite || 1 })) });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }

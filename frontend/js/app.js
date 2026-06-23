@@ -840,8 +840,106 @@ window.confirmDesassemblerUnite = async function(id) {
   if (!lignes.length) { showToast('Sélectionnez au moins une pièce', 'error'); return; }
   const motif = $('#desassMotif')?.value || '';
   try {
-    await apiFetch(`/unites/${id}/desassembler`, { method: 'POST', body: JSON.stringify({ lignes, motif }) });
+    const result = await apiFetch(`/unites/${id}/desassembler`, { method: 'POST', body: JSON.stringify({ lignes, motif }) });
     showToast('Unité désassemblée', 'success');
+    closeModal();
+    // Récupérer les détails des pièces extraites et ouvrir le formulaire document
+    const piecesIds = result.pieces_extraites.map(p => p.composant_id);
+    const articlesData = await apiFetch('/articles?actif=1&limit=200');
+    const allArticles = articlesData?.articles || [];
+    const piecesExtraites = result.pieces_extraites.map(p => {
+      const art = allArticles.find(a => a.id === p.composant_id);
+      return { article_id: p.composant_id, reference: art?.reference || '', designation: art?.designation || '', quantite: p.quantite, prix_vente_ht: art?.prix_vente_ht || 0, tva: 20 };
+    });
+    showDocumentAfterDesassemblage(piecesExtraites);
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+function showDocumentAfterDesassemblage(pieces) {
+  apiFetch('/clients?limit=200').then(async clientsData => {
+    const clients = clientsData?.clients || [];
+    const clientOpts = clients.map(c => `<option value="${c.id}">${c.raison_sociale} (${c.code_client})</option>`).join('');
+
+    openModal('Créer un document pour les pièces extraites', html`
+      <div class="form-row">
+        <div class="form-group"><label>Type de document *</label><select id="docTypeDesass" class="form-select">
+          <option value="devis">Devis</option><option value="bon_livraison">Bon de livraison</option><option value="facture_client">Facture</option>
+        </select></div>
+        <div class="form-group"><label>Client *</label><select id="docClientDesass" class="form-select"><option value="">— Sélectionner —</option>${clientOpts}</select></div>
+      </div>
+      <h4 style="margin:0.8rem 0 0.4rem">Pièces extraites</h4>
+      <div class="card" style="padding:0">
+        <table style="width:100%;font-size:0.85rem">
+          <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>Total HT</th></tr></thead>
+          <tbody id="desassDocLignes">${pieces.map((p, i) => {
+            const total = p.quantite * p.prix_vente_ht;
+            return html`<tr>
+              <td>${p.reference}</td><td>${p.designation}</td>
+              <td><input type="number" class="form-control desass-qte-doc" value="${p.quantite}" min="1" style="width:60px" data-idx="${i}" oninput="updateDesassTotal()"></td>
+              <td><input type="number" step="0.01" class="form-control desass-pu-doc" value="${p.prix_vente_ht}" min="0" style="width:80px" data-idx="${i}" oninput="updateDesassTotal()"></td>
+              <td class="desass-total-line" data-idx="${i}">${formatCurrency(total)} MAD</td>
+            </tr>`;
+          }).join('')}</tbody>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:700">Total HT:</td><td id="desassTotalHT" style="font-weight:700">${formatCurrency(pieces.reduce((s, p) => s + p.quantite * p.prix_vente_ht, 0))} MAD</td></tr>
+          <tr><td colspan="4" style="text-align:right">TVA 20%:</td><td id="desassTotalTVA">${formatCurrency(pieces.reduce((s, p) => s + p.quantite * p.prix_vente_ht * 0.2, 0))} MAD</td></tr>
+          <tr><td colspan="4" style="text-align:right;font-weight:700;font-size:1rem">NET À PAYER:</td><td id="desassNetPayer" style="font-weight:700;font-size:1rem;color:var(--accent)">${formatCurrency(pieces.reduce((s, p) => s + p.quantite * p.prix_vente_ht * 1.2, 0))} MAD</td></tr></tfoot>
+        </table>
+      </div>
+      <div class="form-group" style="margin-top:0.5rem"><label>Notes</label><textarea id="docNotesDesass" class="form-textarea" rows="2" placeholder="Optionnel"></textarea></div>
+    `, html`
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmCreerDocDesass(${JSON.stringify(pieces).replace(/"/g, '&quot;')})">Créer le document</button>
+    `);
+
+    window.updateDesassTotal = updateDesassTotal;
+  });
+}
+
+function updateDesassTotal() {
+  const lignes = $$('.desass-qte-doc');
+  const pus = $$('.desass-pu-doc');
+  const totals = $$('.desass-total-line');
+  let totalHT = 0;
+  lignes.forEach((l, i) => {
+    const qte = parseFloat(l.value) || 0;
+    const pu = parseFloat(pus[i]?.value) || 0;
+    const ht = qte * pu;
+    totalHT += ht;
+    if (totals[i]) totals[i].textContent = formatCurrency(ht) + ' MAD';
+  });
+  const tva = totalHT * 0.2;
+  const ttc = totalHT + tva;
+  const htEl = $('#desassTotalHT');
+  const tvaEl = $('#desassTotalTVA');
+  const netEl = $('#desassNetPayer');
+  if (htEl) htEl.textContent = formatCurrency(totalHT) + ' MAD';
+  if (tvaEl) tvaEl.textContent = formatCurrency(tva) + ' MAD';
+  if (netEl) netEl.textContent = formatCurrency(ttc) + ' MAD';
+}
+
+window.confirmCreerDocDesass = async function(piecesOrig) {
+  const type_document = $('#docTypeDesass')?.value;
+  const client_id = parseInt($('#docClientDesass')?.value);
+  if (!client_id) { showToast('Sélectionnez un client', 'error'); return; }
+
+  const qtes = $$('.desass-qte-doc');
+  const pus = $$('.desass-pu-doc');
+  const lignes = piecesOrig.map((p, i) => ({
+    article_id: p.article_id,
+    source_unit_id: p.source_unit_id || null,
+    quantite: parseFloat(qtes[i]?.value) || p.quantite,
+    prix_unitaire_ht: parseFloat(pus[i]?.value) || p.prix_vente_ht,
+    taux_tva: 20,
+    reference: p.reference,
+    designation: p.designation
+  }));
+
+  try {
+    const result = await apiFetch('/documents', { method: 'POST', body: JSON.stringify({
+      type_document, client_id, lignes,
+      notes: $('#docNotesDesass')?.value || `Pièces extraites par désassemblage`
+    })});
+    showToast(`Document ${result.numero} créé`, 'success');
     closeModal();
     loadUnites();
   } catch (e) { showToast(e.message, 'error'); }
