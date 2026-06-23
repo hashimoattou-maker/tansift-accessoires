@@ -91,25 +91,19 @@ module.exports = function(db) {
   // ============================================================
   router.post('/:id/assembler', async (req, res) => {
     try {
-      const { lignes, quantite, motif } = req.body;
-      const qteAssemblee = quantite || 1;
+      const { lignes, motif } = req.body;
 
       const unit = await db.prepare(`SELECT * FROM articles WHERE id = ?`).get(req.params.id);
       if (!unit) return res.status(404).json({ error: 'Unité introuvable' });
 
-      // Si pas de lignes custom, utiliser la nomenclature
       let composants = lignes;
       if (!composants || !Array.isArray(composants) || composants.length === 0) {
-        const nomenclature = await db.prepare(`SELECT * FROM nomenclature_moteur WHERE moteur_id = ?`).all(req.params.id);
-        if (nomenclature.length === 0) return res.status(400).json({ error: 'Aucune pièce dans la nomenclature. Ajoutez des pièces ou spécifiez les composants.' });
-        composants = nomenclature.map(n => ({ composant_id: n.composant_id, quantite: n.quantite * qteAssemblee }));
-      } else {
-        composants = composants.map(c => ({ composant_id: c.composant_id, quantite: (c.quantite || 1) * qteAssemblee }));
+        return res.status(400).json({ error: 'Spécifiez les quantités de chaque pièce' });
       }
+      composants = composants.filter(c => c.quantite > 0);
 
       await db.run('START TRANSACTION');
       try {
-        // Vérifier et retirer le stock des composants
         for (const comp of composants) {
           const article = await db.prepare(`SELECT stock_actuel, reference FROM articles WHERE id = ?`).get(comp.composant_id);
           if (!article) throw new Error(`Composant ${comp.composant_id} introuvable`);
@@ -119,12 +113,11 @@ module.exports = function(db) {
           const newStock = article.stock_actuel - comp.quantite;
           await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(newStock, comp.composant_id);
           await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_type, utilisateur_id, motif) VALUES (?,?,?,?,?,?,?,?)`)
-            .run(comp.composant_id, 'sortie', comp.quantite, article.stock_actuel, newStock, 'assemblage', req.user?.id, `Assemblage ${unit.reference} x${qteAssemblee}`);
+            .run(comp.composant_id, 'sortie', comp.quantite, article.stock_actuel, newStock, 'assemblage', req.user?.id, `Assemblage ${unit.reference}`);
         }
 
-        // Créer l'enregistrement assemblage
         const assemblResult = await db.prepare(`INSERT INTO assemblages (unite_parent_id, quantite, utilisateur_id, motif) VALUES (?,?,?,?)`)
-          .run(req.params.id, qteAssemblee, req.user?.id, motif || `Assemblage de ${qteAssemblee} unité(s)`);
+          .run(req.params.id, 1, req.user?.id, motif || `Assemblage de 1 unité`);
         const assemblId = assemblResult.lastInsertRowid;
 
         for (const comp of composants) {
@@ -132,8 +125,7 @@ module.exports = function(db) {
             .run(assemblId, comp.composant_id, comp.quantite);
         }
 
-        // Ajouter au stock de l'unité parente
-        const newStockUnite = (unit.stock_unite || 0) + qteAssemblee;
+        const newStockUnite = (unit.stock_unite || 0) + 1;
         await db.prepare(`UPDATE articles SET stock_unite = ?, est_moteur = 1 WHERE id = ?`).run(newStockUnite, req.params.id);
 
         await db.run('COMMIT');
@@ -142,8 +134,8 @@ module.exports = function(db) {
         throw txError;
       }
 
-      await auditLog(db, req.user?.id, 'ASSEMBLAGE', 'article', req.params.id, { quantite: qteAssemblee, composants });
-      res.status(201).json({ success: true, stock_unite_apres: (unit.stock_unite || 0) + qteAssemblee });
+      await auditLog(db, req.user?.id, 'ASSEMBLAGE', 'article', req.params.id, { composants });
+      res.status(201).json({ success: true, stock_unite_apres: (unit.stock_unite || 0) + 1 });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
@@ -176,9 +168,15 @@ module.exports = function(db) {
           if (!article) continue;
 
           const qte = ligne.quantite || 1;
+          const newStock = article.stock_actuel - qte;
 
           await db.prepare(`INSERT INTO decompositions_lignes (decomposition_id, composant_id, quantite, stock_apres) VALUES (?,?,?,?)`)
-            .run(decompId, ligne.composant_id, qte, article.stock_actuel);
+            .run(decompId, ligne.composant_id, qte, newStock);
+
+          await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_type, utilisateur_id, motif) VALUES (?,?,?,?,?,?,?,?)`)
+            .run(ligne.composant_id, 'sortie', qte, article.stock_actuel, newStock, 'desassemblage', req.user?.id, `Désassemblage ${unit.reference}`);
+
+          await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(newStock, ligne.composant_id);
         }
 
         // Retirer du stock unité

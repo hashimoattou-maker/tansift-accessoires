@@ -835,17 +835,16 @@ window.showAssemblerUnite = async function(id) {
   try {
     const data = await apiFetch(`/unites/${id}`);
     const { unite: u, nomenclature } = data;
-    const disponibles = nomenclature.filter(n => n.statut_stock !== 'manquant');
 
     openModal(`Assembler ${u.reference}`, html`
-      <p>Pièces disponibles pour assembler :</p>
-      ${disponibles.length ? html`<div style="margin-top:0.5rem">${disponibles.map(n => html`
+      <p>Sélectionnez la quantité de chaque pièce à consommer du stock :</p>
+      ${nomenclature.length ? html`<div style="margin-top:0.5rem">${nomenclature.map(n => html`
         <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border-light)">
           <span style="flex:1">${n.reference} — ${n.designation}</span>
-          <span class="badge ${n.statut_stock === 'disponible' ? 'badge-success' : 'badge-warning'}">${n.statut_stock} (${formatNumber(n.stock_actuel)})</span>
-        </div>`).join('')}</div>` : '<p style="color:var(--danger)">Aucune pièce disponible</p>'}
-      <div class="form-group" style="margin-top:1rem"><label>Quantité à assembler</label><input id="assemblQte" type="number" class="form-control" value="1" min="1"></div>
-      <div class="form-group"><label>Motif</label><input id="assemblMotif" type="text" class="form-control" placeholder="Optionnel"></div>
+          <span style="font-size:0.8rem;color:var(--text-light)">Stock: ${formatNumber(n.stock_actuel)}</span>
+          <input type="number" class="form-control assembl-comp-qte" data-id="${n.composant_id}" value="${n.quantite}" min="0" max="${n.stock_actuel}" style="width:70px">
+        </div>`).join('')}</div>` : '<p style="color:var(--danger)">Aucune pièce dans la nomenclature</p>'}
+      <div class="form-group" style="margin-top:1rem"><label>Motif</label><input id="assemblMotif" type="text" class="form-control" placeholder="Optionnel"></div>
     `, html`
       <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
       <button class="btn btn-success" onclick="confirmAssembler(${id})">Assembler</button>
@@ -854,10 +853,15 @@ window.showAssemblerUnite = async function(id) {
 };
 
 window.confirmAssembler = async function(id) {
-  const qte = parseInt($('#assemblQte').value) || 1;
+  const qteInputs = $$('.assembl-comp-qte');
+  const lignes = Array.from(qteInputs).map(inp => ({
+    composant_id: parseInt(inp.dataset.id),
+    quantite: parseInt(inp.value) || 0
+  })).filter(l => l.quantite > 0);
+  if (!lignes.length) { showToast('Sélectionnez au moins une pièce', 'error'); return; }
   const motif = $('#assemblMotif')?.value || '';
   try {
-    await apiFetch(`/unites/${id}/assembler`, { method: 'POST', body: JSON.stringify({ quantite: qte, motif }) });
+    await apiFetch(`/unites/${id}/assembler`, { method: 'POST', body: JSON.stringify({ lignes, motif }) });
     showToast('Unité assemblée', 'success');
     closeModal();
     loadUnites();
