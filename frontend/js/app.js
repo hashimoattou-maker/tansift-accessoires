@@ -658,7 +658,7 @@ function renderUnites(page) {
       <select id="uniteTypeFilter" class="form-select" style="width:180px" onchange="loadUnites()">
         <option value="">Tous types</option>
         <option value="moteur">Moteur</option><option value="masque">Masque</option><option value="boite">Boîte</option>
-        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option>
+        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option><option value="portes">Portes</option>
         <option value="autre">Autre</option>
       </select>
     </div>
@@ -680,7 +680,7 @@ async function loadUnites() {
     if (type) url += `type=${type}&`;
     if (search) url += `search=${encodeURIComponent(search)}`;
     const units = await apiFetch(url);
-    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', autre: 'Autre' };
+    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', portes: 'Portes', autre: 'Autre' };
     const etatClasses = { complet: 'badge-success', partiel: 'badge-warning', manquant: 'badge-danger', non_defini: 'badge-info' };
     const etatLabels = { complet: 'Complet', partiel: 'Partiel', manquant: 'Manquant', non_defini: 'Non défini' };
     container.innerHTML = units.length ? units.map(u => html`<div class="card">
@@ -725,7 +725,7 @@ window.showMarquerUnite = async function() {
       </div>
       <div class="form-group"><label>Type d'unité</label><select id="marquerTypeUnite" class="form-select">
         <option value="moteur">Moteur</option><option value="masque">Masque</option><option value="boite">Boîte de vitesses</option>
-        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option>
+        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option><option value="portes">Portes</option>
         <option value="autre">Autre</option>
       </select></div>
     `, html`
@@ -784,7 +784,7 @@ window.showUniteDetail = async function(id) {
   try {
     const data = await apiFetch(`/unites/${id}`);
     const { unite: u, nomenclature, assemblages, decompositions, ventes, mouvements } = data;
-    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', autre: 'Autre' };
+    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', portes: 'Portes', autre: 'Autre' };
 
     let htmlContent = html`
       <div class="stat-row" style="margin-bottom:1rem">
