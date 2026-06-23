@@ -844,16 +844,20 @@ window.showDesassemblerUnite = async function(id) {
 };
 
 window.confirmDesassemblerUnite = async function(id) {
-  const checks = $$('.desass-check:checked');
-  const qtes = $$('.desass-qte');
-  const lignes = Array.from(checks).map((c, i) => ({ composant_id: parseInt(c.dataset.id), quantite: parseInt(qtes[i]?.value) || 1 }));
+  const rows = Array.from($$('#desassUniteList > div'));
+  const lignes = rows.map(row => {
+    const check = row.querySelector('.desass-check');
+    const qte = row.querySelector('.desass-qte');
+    if (!check?.checked) return null;
+    return { composant_id: parseInt(check.dataset.id), quantite: parseInt(qte?.value) || 1 };
+  }).filter(Boolean);
   if (!lignes.length) { showToast('Sélectionnez au moins une pièce', 'error'); return; }
   const motif = $('#desassMotif')?.value || '';
   try {
     const result = await apiFetch(`/unites/${id}/desassembler`, { method: 'POST', body: JSON.stringify({ lignes, motif }) });
     showToast('Unité désassemblée', 'success');
     closeModal();
-    // Récupérer les détails des pièces extraites et ouvrir le formulaire document
+    loadUnites();
     const piecesIds = result.pieces_extraites.map(p => p.composant_id);
     const articlesData = await apiFetch('/articles?actif=1&limit=200');
     const allArticles = articlesData?.articles || [];
