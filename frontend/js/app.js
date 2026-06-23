@@ -710,8 +710,19 @@ window.showMarquerUnite = async function() {
   try {
     const data = await apiFetch('/articles?actif=1&limit=200');
     const articles = (data?.articles || []).filter(a => !a.est_moteur && !a.type_unite);
+
+    window._marquerArticles = articles;
+    window._marquerSelectedId = null;
+
     openModal('Marquer un article comme unité assemblable', html`
-      <div class="form-group"><label>Article</label><select id="marquerArticleId" class="form-select">${articles.map(a => html`<option value="${a.id}">${a.reference} - ${a.designation}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Article</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="marquerArticleSearch" class="form-control" placeholder="Tapez référence ou nom..." autocomplete="off"
+            oninput="searchMarquerArticle(this)" onfocus="searchMarquerArticle(this)"
+            onblur="setTimeout(()=>this.parentElement.querySelector('.autocomplete-results')?.classList.remove('show'),250)">
+          <div class="autocomplete-results"></div>
+        </div>
+      </div>
       <div class="form-group"><label>Type d'unité</label><select id="marquerTypeUnite" class="form-select">
         <option value="moteur">Moteur</option><option value="masque">Masque</option><option value="boite">Boîte de vitesses</option>
         <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option>
@@ -724,8 +735,41 @@ window.showMarquerUnite = async function() {
   } catch (e) { showToast(e.message, 'error'); }
 };
 
+window.searchMarquerArticle = function(input) {
+  const val = input.value.trim().toLowerCase();
+  const wrap = input.closest('.autocomplete-wrap');
+  const results = wrap?.querySelector('.autocomplete-results');
+  if (!results) return;
+  if (val.length < 1) { results.classList.remove('show'); return; }
+
+  const filtered = (window._marquerArticles || []).filter(a =>
+    (a.reference || '').toLowerCase().includes(val) ||
+    (a.designation || '').toLowerCase().includes(val)
+  ).slice(0, 15);
+
+  if (!filtered.length) {
+    results.innerHTML = '<div class="autocomplete-item" style="color:var(--text-light)">Aucun article trouvé</div>';
+    results.classList.add('show');
+    return;
+  }
+
+  results.innerHTML = filtered.map(a =>
+    `<div class="autocomplete-item" onclick="selectMarquerArticle(this, ${a.id}, '${(a.reference||'').replace(/'/g,"\\'")}', '${(a.designation||'').replace(/'/g,"\\'")}')">
+      <div><span class="ref">${a.reference}</span> — ${a.designation}</div>
+    </div>`
+  ).join('');
+  results.classList.add('show');
+};
+
+window.selectMarquerArticle = function(el, id, ref, des) {
+  const input = el.closest('.autocomplete-wrap').querySelector('input');
+  input.value = ref + ' — ' + des;
+  window._marquerSelectedId = id;
+  el.closest('.autocomplete-results').classList.remove('show');
+};
+
 window.confirmMarquerUnite = async function() {
-  const articleId = parseInt($('#marquerArticleId').value);
+  const articleId = window._marquerSelectedId || parseInt($('#marquerArticleSearch')?.value);
   const typeUnite = $('#marquerTypeUnite').value;
   if (!articleId) { showToast('Sélectionnez un article', 'error'); return; }
   try {
@@ -2925,7 +2969,7 @@ async function loadNotifications() {
   'generateReport','exportZip','saveSociete','saveConfiguration','saveUser','editUser','showUserForm','switchParamTab','backupDB','restoreDB','confirmRestore','uploadLogo','deleteLogo',
   'renderArticles','renderDashboard','renderMoteurs','renderClients','renderSituation','renderFournisseurs','renderBarcodes','renderRapports','renderParametres','renderAudit','renderPage','renderBreadcrumb',
   'login','logout','checkAuth','apiFetch','html',
-  'searchNomPiece','selectNomPiece',
+  'searchNomPiece','selectNomPiece','searchMarquerArticle','selectMarquerArticle',
   'quickSale'
 ].forEach(name => {
   if (typeof window[name] === 'undefined' && typeof eval(name) !== 'undefined') {
