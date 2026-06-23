@@ -1542,6 +1542,7 @@ async function loadDocuments(type) {
           <button class="btn btn-sm btn-secondary" onclick="printDocument(${d.id})" title="Imprimer">🖨️</button>
           ${['devis','bon_commande_client','bon_livraison','demande_achat','commande_fournisseur','bon_reception'].includes(d.type_document) && d.statut !== 'annule' ? `<button class="btn btn-sm btn-primary" onclick="transfertDocument(${d.id})" title="Transférer vers le type suivant">🔄</button>` : ''}
           <button class="btn btn-sm ${d.statut === 'brouillon' ? 'btn-success' : 'btn-secondary'}" onclick="changeDocStatut(${d.id}, '${d.statut}')" title="Changer statut">➡️</button>
+          ${d.statut !== 'annule' ? `<button class="btn btn-sm btn-danger" onclick="supprimerDocument(${d.id}, '${d.numero}')" title="Supprimer">🗑️</button>` : ''}
         </td>
       </tr>`;
     }).join('') : '<tr><td colspan="7"><div class="empty-state"><p>Aucun document</p></div></td></tr>';
@@ -2011,6 +2012,16 @@ async function changeDocStatut(id, currentStatut) {
     showToast(`Statut mis à jour: ${next}`, 'success');
     const type = document.querySelector('[data-route^="documents"]')?.dataset?.route || '';
     loadDocuments(type.includes('achats') ? 'achats' : 'ventes');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function supprimerDocument(id, numero) {
+  if (!confirm(`Supprimer le document ${numero} ?`)) return;
+  try {
+    await apiFetch(`/documents/${id}`, { method: 'DELETE' });
+    showToast('Document supprimé', 'success');
+    const route = document.querySelector('[data-route^="documents"]')?.dataset?.route || '';
+    loadDocuments(route.includes('achats') ? 'achats' : 'ventes');
   } catch (e) { showToast(e.message, 'error'); }
 }
 
@@ -2846,7 +2857,7 @@ async function loadNotifications() {
   'showClientForm','editClient','showClientDetail','showClientSituation','loadClients','saveClient',
   'showPaiementForm','loadSituation','exportSoldes','savePaiement',
   'showFournisseurForm','editFournisseur','showFournisseurDetail','loadFournisseurs','saveFournisseur',
-  'showDocumentForm','editDocument','printDocument','changeDocStatut','loadDocuments','saveDocument',
+  'showDocumentForm','editDocument','printDocument','changeDocStatut','supprimerDocument','loadDocuments','saveDocument',
   'saveEditDocument','addEditDocLigne','removeEditLigne','recalcEditDoc','searchEditArticle','selectEditArticle',
   'addDocLigne','removeLigne','searchDocArticle','selectDocArticle','scanDocBarcode',
   'scanBarcode','generateLabel','previewLabel','printBulkLabels','transfertDocument',
