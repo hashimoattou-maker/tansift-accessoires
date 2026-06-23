@@ -681,26 +681,37 @@ async function loadUnites() {
     if (search) url += `search=${encodeURIComponent(search)}`;
     const units = await apiFetch(url);
     const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', portes: 'Portes', autre: 'Autre' };
+    const typeBadge = { moteur: 'badge-danger', masque: 'badge-info', boite: 'badge-warning', pont: 'badge-info', train_avant: 'badge-info', train_arriere: 'badge-info', portes: 'badge-info', autre: 'badge-neutral' };
     const etatClasses = { complet: 'badge-success', partiel: 'badge-warning', manquant: 'badge-danger', non_defini: 'badge-info' };
     const etatLabels = { complet: 'Complet', partiel: 'Partiel', manquant: 'Manquant', non_defini: 'Non défini' };
-    container.innerHTML = units.length ? units.map(u => html`<div class="card">
-      <div class="card-header"><h3>${u.reference}</h3><span class="badge badge-neutral">${typeLabels[u.type_unite] || 'Unité'}</span></div>
-      <p style="margin-bottom:0.5rem;font-weight:500">${u.designation}</p>
-      <div class="stat-row" style="gap:0.5rem">
-        <div class="stat-item" style="padding:0.5rem"><div class="stat-value" style="font-size:1rem">${formatNumber(u.stock_unite || 0)}</div><div class="stat-label">Unités</div></div>
-        <div class="stat-item" style="padding:0.5rem"><div class="stat-value" style="font-size:1rem">${formatNumber(u.total_composants || 0)}</div><div class="stat-label">Pièces</div></div>
-        <div class="stat-item" style="padding:0.5rem"><div class="stat-value" style="font-size:1rem">${formatNumber(u.composants_disponibles || 0)}</div><div class="stat-label">Dispo</div></div>
+    container.innerHTML = units.length ? units.map(u => html`<div class="card" style="padding:0">
+      <div style="padding:1rem 1rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;color:var(--text)">${u.reference}</div>
+            <div style="font-size:0.85rem;color:var(--text-light);margin-top:0.15rem">${u.designation}</div>
+          </div>
+          <span class="badge ${typeBadge[u.type_unite] || 'badge-neutral'}" style="flex-shrink:0">${typeLabels[u.type_unite] || 'Unité'}</span>
+        </div>
       </div>
-      <div style="margin-top:0.5rem;display:flex;gap:0.3rem;flex-wrap:wrap">
-        <span class="badge ${etatClasses[u.etat] || 'badge-info'}">${etatLabels[u.etat] || u.etat}</span>
-        <span class="badge badge-info">${formatNumber(u.total_assemblages || 0)} assembl.</span>
-        <span class="badge badge-warning">${formatNumber(u.total_desassemblages || 0)} désass.</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border-light);margin-top:0.75rem">
+        <div style="padding:0.75rem 1rem;border-right:1px solid var(--border-light);text-align:center">
+          <div style="font-size:1.4rem;font-weight:700;color:var(--accent)">${formatNumber(u.stock_unite || 0)}</div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light)">En stock</div>
+        </div>
+        <div style="padding:0.75rem 1rem;text-align:center">
+          <div style="font-size:1.4rem;font-weight:700;${u.composants_disponibles === u.total_composants ? 'color:var(--success)' : u.composants_disponibles > 0 ? 'color:var(--warning)' : 'color:var(--danger)'}">${formatNumber(u.composants_disponibles || 0)}/${formatNumber(u.total_composants || 0)}</div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light)">Composants</div>
+        </div>
       </div>
-      <div style="margin-top:0.5rem;display:flex;gap:0.3rem">
-        <button class="btn btn-sm btn-secondary" onclick="showUniteDetail(${u.id})">Détail</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteUnite(${u.id}, '${u.reference}')">Supprimer</button>
-        ${u.etat === 'complet' ? `<button class="btn btn-sm btn-warning" onclick="showDesassemblerUnite(${u.id})">Désassembler</button>` : ''}
-        ${u.etat === 'complet' || u.etat === 'partiel' ? `<button class="btn btn-sm btn-success" onclick="showAssemblerUnite(${u.id})">Assembler +1</button>` : ''}
+      <div style="padding:0.75rem 1rem;border-top:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between">
+        <span class="badge ${etatClasses[u.etat] || 'badge-info'}" style="font-size:0.75rem">${etatLabels[u.etat] || u.etat}</span>
+        <div style="display:flex;gap:0.25rem">
+          <button class="btn btn-sm btn-secondary" onclick="showUniteDetail(${u.id})" title="Détail">🔍</button>
+          ${u.etat === 'complet' || u.etat === 'partiel' ? `<button class="btn btn-sm btn-success" onclick="showAssemblerUnite(${u.id})" title="Assembler">➕</button>` : ''}
+          ${u.etat === 'complet' ? `<button class="btn btn-sm btn-warning" onclick="showDesassemblerUnite(${u.id})" title="Désassembler">🔧</button>` : ''}
+          <button class="btn btn-sm btn-danger" onclick="deleteUnite(${u.id}, '${u.reference}')" title="Supprimer">🗑️</button>
+        </div>
       </div>
     </div>`).join('') : '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔧</div><p>Aucune unité assemblable</p><p style="font-size:0.8rem">Marquez un article comme unité pour commencer</p></div>';
   } catch { container.innerHTML = '<div class="empty-state">Erreur chargement</div>'; }
