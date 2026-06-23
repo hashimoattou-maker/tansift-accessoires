@@ -694,15 +694,9 @@ async function loadUnites() {
           <span class="badge ${typeBadge[u.type_unite] || 'badge-neutral'}" style="flex-shrink:0">${typeLabels[u.type_unite] || 'Unité'}</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border-light);margin-top:0.75rem">
-        <div style="padding:0.75rem 1rem;border-right:1px solid var(--border-light);text-align:center">
-          <div style="font-size:1.4rem;font-weight:700;color:var(--accent)">${formatNumber(u.stock_unite || 0)}</div>
-          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light)">En stock</div>
-        </div>
-        <div style="padding:0.75rem 1rem;text-align:center">
-          <div style="font-size:1.4rem;font-weight:700;${u.composants_disponibles === u.total_composants ? 'color:var(--success)' : u.composants_disponibles > 0 ? 'color:var(--warning)' : 'color:var(--danger)'}">${formatNumber(u.composants_disponibles || 0)}/${formatNumber(u.total_composants || 0)}</div>
-          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light)">Composants</div>
-        </div>
+      <div style="border-top:1px solid var(--border-light);margin-top:0.75rem;padding:0.75rem 1rem;text-align:center">
+        <div style="font-size:1.4rem;font-weight:700;${u.composants_disponibles === u.total_composants ? 'color:var(--success)' : u.composants_disponibles > 0 ? 'color:var(--warning)' : 'color:var(--danger)'}">${formatNumber(u.composants_disponibles || 0)}/${formatNumber(u.total_composants || 0)}</div>
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light)">Composants disponibles</div>
       </div>
       <div style="padding:0.75rem 1rem;border-top:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between">
         <span class="badge ${etatClasses[u.etat] || 'badge-info'}" style="font-size:0.75rem">${etatLabels[u.etat] || u.etat}</span>
