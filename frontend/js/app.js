@@ -603,8 +603,18 @@ window.ajouterPieceNomenclature = async function(id) {
     const idsNomenclature = moteur.nomenclature.map(n => n.composant_id);
     const disponibles = (articles?.articles || []).filter(a => !idsNomenclature.includes(a.id) && a.id !== id);
 
+    window._nomPieceDisponibles = disponibles;
+    window._nomPieceSelectedId = null;
+
     openModal('Ajouter une pièce à la nomenclature', html`
-      <div class="form-group"><label>Pièce</label><select id="nomenclaturePiece" class="form-select">${disponibles.map(a => html`<option value="${a.id}">${a.reference} - ${a.designation}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Pièce</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="nomPieceSearch" class="form-control" placeholder="Tapez référence ou nom..." autocomplete="off"
+            oninput="searchNomPiece(this)" onfocus="searchNomPiece(this)"
+            onblur="setTimeout(()=>this.parentElement.querySelector('.autocomplete-results')?.classList.remove('show'),250)">
+          <div class="autocomplete-results"></div>
+        </div>
+      </div>
       <div class="form-group"><label>Quantité</label><input id="nomenclatureQte" type="number" class="form-control" value="1" min="1"></div>
     `, html`
       <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
@@ -614,7 +624,7 @@ window.ajouterPieceNomenclature = async function(id) {
 };
 
 window.confirmAjouterPiece = async function(id) {
-  const composant_id = parseInt($('#nomenclaturePiece').value);
+  const composant_id = window._nomPieceSelectedId || parseInt($('#nomenclaturePiece')?.value);
   const quantite = parseInt($('#nomenclatureQte').value) || 1;
   if (!composant_id) { showToast('Sélectionnez une pièce', 'error'); return; }
   try {
@@ -952,8 +962,18 @@ window.ajouterPieceNomenclatureUnite = async function(id) {
     const idsNom = unite.nomenclature.map(n => n.composant_id);
     const disponibles = (data?.articles || []).filter(a => !idsNom.includes(a.id) && a.id !== id);
 
+    window._nomPieceDisponibles = disponibles;
+    window._nomPieceSelectedId = null;
+
     openModal('Ajouter pièce à la nomenclature', html`
-      <div class="form-group"><label>Pièce</label><select id="nomPieceId" class="form-select">${disponibles.map(a => html`<option value="${a.id}">${a.reference} — ${a.designation} (stock: ${formatNumber(a.stock_actuel)})</option>`).join('')}</select></div>
+      <div class="form-group"><label>Pièce</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="nomPieceSearch" class="form-control" placeholder="Tapez référence ou nom..." autocomplete="off"
+            oninput="searchNomPiece(this)" onfocus="searchNomPiece(this)"
+            onblur="setTimeout(()=>this.parentElement.querySelector('.autocomplete-results')?.classList.remove('show'),250)">
+          <div class="autocomplete-results"></div>
+        </div>
+      </div>
       <div class="form-group"><label>Quantité</label><input id="nomQte" type="number" class="form-control" value="1" min="1"></div>
     `, html`
       <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
@@ -962,8 +982,45 @@ window.ajouterPieceNomenclatureUnite = async function(id) {
   } catch (e) { showToast(e.message, 'error'); }
 };
 
+window.searchNomPiece = function(input) {
+  const val = input.value.trim().toLowerCase();
+  const wrap = input.closest('.autocomplete-wrap');
+  const results = wrap?.querySelector('.autocomplete-results');
+  if (!results) return;
+
+  if (val.length < 1) { results.classList.remove('show'); return; }
+
+  const filtered = (window._nomPieceDisponibles || []).filter(a =>
+    (a.reference || '').toLowerCase().includes(val) ||
+    (a.designation || '').toLowerCase().includes(val) ||
+    (a.code_barre || '').includes(val)
+  ).slice(0, 15);
+
+  if (!filtered.length) {
+    results.innerHTML = '<div class="autocomplete-item" style="color:var(--text-light)">Aucun article trouvé</div>';
+    results.classList.add('show');
+    return;
+  }
+
+  results.innerHTML = filtered.map(a => {
+    const taux = a.taux_tva_value || 20;
+    return `<div class="autocomplete-item" onclick="selectNomPiece(this, ${a.id}, '${(a.reference||'').replace(/'/g,"\\'")}', '${(a.designation||'').replace(/'/g,"\\'")}')">
+      <div><span class="ref">${a.reference}</span> — ${a.designation}</div>
+      <div><span class="stock-info">Stock: ${formatNumber(a.stock_actuel)}</span></div>
+    </div>`;
+  }).join('');
+  results.classList.add('show');
+};
+
+window.selectNomPiece = function(el, id, ref, des) {
+  const input = el.closest('.autocomplete-wrap').querySelector('input');
+  input.value = ref + ' — ' + des;
+  window._nomPieceSelectedId = id;
+  el.closest('.autocomplete-results').classList.remove('show');
+};
+
 window.confirmAjouterPieceUnite = async function(id) {
-  const composant_id = parseInt($('#nomPieceId').value);
+  const composant_id = window._nomPieceSelectedId || parseInt($('#nomPieceSearch')?.value);
   const quantite = parseInt($('#nomQte').value) || 1;
   if (!composant_id) { showToast('Sélectionnez une pièce', 'error'); return; }
   try {
@@ -2864,6 +2921,7 @@ async function loadNotifications() {
   'generateReport','exportZip','saveSociete','saveConfiguration','saveUser','editUser','showUserForm','switchParamTab','backupDB','restoreDB','confirmRestore','uploadLogo','deleteLogo',
   'renderArticles','renderDashboard','renderMoteurs','renderClients','renderSituation','renderFournisseurs','renderBarcodes','renderRapports','renderParametres','renderAudit','renderPage','renderBreadcrumb',
   'login','logout','checkAuth','apiFetch','html',
+  'searchNomPiece','selectNomPiece',
   'quickSale'
 ].forEach(name => {
   if (typeof window[name] === 'undefined' && typeof eval(name) !== 'undefined') {
