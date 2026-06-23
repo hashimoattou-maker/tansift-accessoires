@@ -437,7 +437,20 @@ module.exports = function(db) {
   // DELETE /api/documents/:id
   router.delete('/:id', async (req, res) => {
     try {
-      await db.prepare(`UPDATE documents SET statut = 'annule', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(req.params.id);
+      const doc = await db.prepare(`SELECT * FROM documents WHERE id = ?`).get(req.params.id);
+      if (!doc) return res.status(404).json({ error: 'Document introuvable' });
+
+      await db.run('START TRANSACTION');
+      try {
+        await db.prepare(`DELETE FROM documents_lignes WHERE document_id = ?`).run(req.params.id);
+        await db.prepare(`DELETE FROM documents WHERE id = ?`).run(req.params.id);
+        await db.run('COMMIT');
+      } catch (txError) {
+        await db.run('ROLLBACK');
+        throw txError;
+      }
+
+      await auditLog(db, req.user?.id, 'SUPPRESSION', doc.type_document, req.params.id, { numero: doc.numero });
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: e.message });
