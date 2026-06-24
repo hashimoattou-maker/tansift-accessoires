@@ -631,6 +631,9 @@ async function createTables() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_assembl_ligne ON assemblages_lignes(assemblage_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_decomp_parent ON decompositions(parent_article_id)`);
   } catch (e) { /* already exists */ }
+
+  // Migration: catégorie Accessoires
+  try { await pool.query(`INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)`, ['ACC', 'Accessoires', 20, 365]); } catch (e) { /* exists */ }
 }
 
 async function seedData() {
@@ -689,7 +692,8 @@ async function seedData() {
     ['FREIN', 'Freinage', 20, 365], ['EMBR', 'Embrayage', 20, 365], ['SUSP', 'Suspension', 20, 365],
     ['ELEC', 'Électricité', 20, 365], ['CARRO', 'Carrosserie', 20, 365],
     ['MOTEUR', 'Moteurs', 20, 730],
-    ['ASSEM', 'Assemblage', 20, 365]
+    ['ASSEM', 'Assemblage', 20, 365],
+    ['ACC', 'Accessoires', 20, 365]
   ];
   for (const [code, nom, tva, garantie] of categories) {
     await pool.query('INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)', [code, nom, tva, garantie]);
