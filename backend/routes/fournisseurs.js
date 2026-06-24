@@ -33,7 +33,7 @@ module.exports = function(db) {
     try {
       const { raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement } = req.body;
       if (!raison_sociale) return res.status(400).json({ error: 'Raison sociale requise' });
-      const allCodes = await db.prepare(`SELECT code_fournisseur FROM fournisseurs WHERE code_fournisseur LIKE 'FR-4411%'`).all();
+      const allCodes = await db.prepare(`SELECT code_fournisseur FROM fournisseurs WHERE code_fournisseur LIKE 'FR-4411%' AND actif = 1`).all();
       let maxNum = 0;
       for (const row of allCodes) {
         const num = parseInt(row.code_fournisseur.replace('FR-4411', ''), 10);
