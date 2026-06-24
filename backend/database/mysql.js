@@ -636,8 +636,26 @@ async function createTables() {
   try { await pool.query(`INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)`, ['ACC', 'Accessoires', 20, 365]); } catch (e) { /* exists */ }
 
   // Migration: nettoyer les anciens clients/fournisseurs supprimés (actif=0) pour renumérotation
-  try { await pool.query(`DELETE FROM clients WHERE actif = 0 AND code_client LIKE 'CLT-3421%'`); } catch (e) { /* exists */ }
-  try { await pool.query(`DELETE FROM fournisseurs WHERE actif = 0 AND code_fournisseur LIKE 'FR-4411%'`); } catch (e) { /* exists */ }
+  try {
+    const [oldClients] = await pool.query(`SELECT id FROM clients WHERE actif = 0`);
+    for (const c of oldClients) {
+      try { await pool.query(`DELETE FROM imputations_paiements WHERE client_id = ?`, [c.id]); } catch {}
+      try { await pool.query(`DELETE FROM garanties WHERE client_id = ?`, [c.id]); } catch {}
+      try { await pool.query(`DELETE FROM mouvements_stock WHERE client_id = ?`, [c.id]); } catch {}
+      try { await pool.query(`UPDATE documents SET client_id = NULL WHERE client_id = ?`, [c.id]); } catch {}
+      try { await pool.query(`DELETE FROM paiements_clients WHERE client_id = ?`, [c.id]); } catch {}
+      try { await pool.query(`DELETE FROM documents_lignes WHERE document_id IN (SELECT id FROM documents WHERE client_id = ?)`, [c.id]); } catch {}
+      await pool.query(`DELETE FROM clients WHERE id = ?`, [c.id]);
+    }
+  } catch (e) { /* exists */ }
+  try {
+    const [oldFrn] = await pool.query(`SELECT id FROM fournisseurs WHERE actif = 0`);
+    for (const f of oldFrn) {
+      try { await pool.query(`UPDATE documents SET fournisseur_id = NULL WHERE fournisseur_id = ?`, [f.id]); } catch {}
+      try { await pool.query(`DELETE FROM mouvements_stock WHERE fournisseur_id = ?`, [f.id]); } catch {}
+      await pool.query(`DELETE FROM fournisseurs WHERE id = ?`, [f.id]);
+    }
+  } catch (e) { /* exists */ }
 }
 
 async function seedData() {
