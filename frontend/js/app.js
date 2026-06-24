@@ -1623,7 +1623,7 @@ function renderDocuments(type, page) {
   const isAchat = type === 'achats';
   const title = isAchat ? 'Achats' : 'Ventes';
   const docTypes = isAchat
-    ? [{val:'demande_achat',label:'DA'},{val:'commande_fournisseur',label:'Commande'},{val:'bon_reception',label:'BR'},{val:'facture_fournisseur',label:'Facture'},{val:'avoir_fournisseur',label:'Avoir'}]
+    ?       [{val:'demande_achat',label:'DA'},{val:'commande_fournisseur',label:'Commande'},{val:'bon_reception',label:'BL'},{val:'facture_fournisseur',label:'Facture'},{val:'avoir_fournisseur',label:'Avoir'}]
     : [{val:'devis',label:'Devis'},{val:'bon_commande_client',label:'Commande'},{val:'bon_livraison',label:'BL'},{val:'facture_client',label:'Facture'},{val:'avoir_client',label:'Avoir'}];
 
   page.innerHTML = html`
@@ -1703,7 +1703,7 @@ async function loadDocuments(type) {
 function showDocumentForm(type) {
   const isAchat = type === 'achats';
   const docTypeOptions = isAchat
-    ? `<option value="demande_achat">Demande d'achat</option><option value="commande_fournisseur">Commande fournisseur</option><option value="bon_reception">Bon de réception</option><option value="facture_fournisseur">Facture fournisseur</option>`
+    ? `<option value="demande_achat">Demande d'achat</option><option value="commande_fournisseur">Commande fournisseur</option>      <option value="bon_reception">Bon de livraison</option><option value="facture_fournisseur">Facture fournisseur</option>`
     : `<option value="devis">Devis</option><option value="bon_commande_client">Commande client</option><option value="bon_livraison">Bon de livraison</option><option value="facture_client">Facture</option><option value="avoir_client">Avoir</option>`;
 
   // Load clients or suppliers
