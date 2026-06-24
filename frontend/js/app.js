@@ -2470,10 +2470,24 @@ function previewLabel() {
 function generateLabel() {
   const svg = document.querySelector('#labelPreview svg');
   if (!svg) { showToast('Sélectionnez d\'abord un article', 'warning'); return; }
-  const win = window.open('', '_blank');
-  win.document.write(`<html><head><title>Étiquette</title><style>body{text-align:center;padding:20px}svg{max-width:100%}</style></head><body>${svg.outerHTML}</body></html>`);
-  win.document.close();
-  win.print();
+  const articleId = $('#labelArticleSelect')?.value;
+  apiFetch(`/articles/${articleId}`).then(a => {
+    const win = window.open('', '_blank');
+    win.document.write(`<html><head><title>Étiquette - ${a.reference}</title><style>
+      body{font-family:Arial,sans-serif;text-align:center;padding:20px;margin:0}
+      .label-name{font-size:16px;font-weight:700;margin-bottom:2px}
+      .label-ref{font-size:12px;color:#555;margin-bottom:4px}
+      .label-price{font-size:14px;color:#2563eb;font-weight:bold;margin-bottom:8px}
+      svg{max-width:100%}
+      @media print{@page{margin:5mm}}
+    </style></head><body>
+      <div class="label-name">${a.designation}</div>
+      <div class="label-ref">${a.reference}</div>
+      <div class="label-price">${formatCurrency(a.prix_vente_ht)} MAD</div>
+      ${svg.outerHTML}
+    </body></html>`);
+    win.document.close();
+  });
 }
 
 async function printBulkLabels() {
