@@ -587,6 +587,9 @@ async function createTables() {
   try { await pool.query(`ALTER TABLE articles ADD COLUMN type_unite VARCHAR(50) DEFAULT NULL AFTER est_moteur`); } catch (e) { /* exists */ }
   try { await pool.query(`ALTER TABLE articles ADD COLUMN stock_unite INT DEFAULT 0 AFTER stock_actuel`); } catch (e) { /* exists */ }
 
+  // Migration: colonne image pour articles
+  try { await pool.query(`ALTER TABLE articles ADD COLUMN image MEDIUMTEXT DEFAULT NULL AFTER description`); } catch (e) { /* exists */ }
+
   // Migration: renommer moteur_id en parent_article_id dans decompositions (générique)
   try { await pool.query(`ALTER TABLE decompositions CHANGE COLUMN moteur_id parent_article_id INT NOT NULL`); } catch (e) { /* exists or already renamed */ }
 

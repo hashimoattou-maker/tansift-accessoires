@@ -323,6 +323,13 @@ function showArticleForm(articleId) {
               <div class="form-group"><label>Désignation *</label><input name="designation" class="form-control" value="${a.designation}" required></div>
             </div>
             <div class="form-group"><label>Description</label><textarea name="description" class="form-textarea">${a.description || ''}</textarea></div>
+            <div class="form-group"><label>Image</label>
+              <div style="display:flex;gap:1rem;align-items:start">
+                <div style="flex:1"><input type="file" class="form-control" accept="image/*" onchange="previewArticleImage(this)"></div>
+                <div id="articleImagePreview" style="width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-light);flex-shrink:0">${a.image ? `<img src="${a.image}" style="width:100%;height:100%;object-fit:cover">` : ''}</div>
+              </div>
+              <input type="hidden" name="image" value="${a.image || ''}">
+            </div>
             <div class="form-row">
               <div class="form-group"><label>Catégorie</label><select name="categorie_id" class="form-select">${catOptions.replace(`value="${a.categorie_id}"`, `value="${a.categorie_id}" selected`)}</select></div>
               <div class="form-group"><label>Type</label><select name="type_article" class="form-select"><option value="accessoire" ${a.type_article==='accessoire'?'selected':''}>Accessoire</option><option value="moteur" ${a.type_article==='moteur'?'selected':''}>Moteur</option><option value="assemblage" ${a.type_article==='assemblage'?'selected':''}>Assemblage</option></select></div>
@@ -357,6 +364,13 @@ function showArticleForm(articleId) {
             <div class="form-group"><label>Désignation *</label><input name="designation" class="form-control" required></div>
           </div>
           <div class="form-group"><label>Description</label><textarea name="description" class="form-textarea"></textarea></div>
+          <div class="form-group"><label>Image</label>
+            <div style="display:flex;gap:1rem;align-items:start">
+              <div style="flex:1"><input type="file" class="form-control" accept="image/*" onchange="previewArticleImage(this)"></div>
+              <div id="articleImagePreview" style="width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-light);flex-shrink:0"></div>
+            </div>
+            <input type="hidden" name="image">
+          </div>
           <div class="form-row">
             <div class="form-group"><label>Catégorie</label><select name="categorie_id" class="form-select">${catOptions}</select></div>
             <div class="form-group"><label>Type</label><select name="type_article" class="form-select"><option value="accessoire">Accessoire</option><option value="moteur">Moteur</option><option value="assemblage">Assemblage</option></select></div>
@@ -407,6 +421,20 @@ async function saveArticle(e, id) {
     closeModal();
     loadArticles();
   } catch (e) { showToast(e.message, 'error'); }
+}
+
+function previewArticleImage(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Image trop grande (max 5 Mo)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = $('#articleImagePreview');
+    if (preview) preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    const hidden = input.closest('form')?.querySelector('input[name="image"]');
+    if (hidden) hidden.value = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function editArticle(id) { showArticleForm(id); }
@@ -2975,7 +3003,7 @@ async function loadNotifications() {
 // Ensure ALL functions used in onclick attributes are on window
 ;[
   'navigate','closeModal','openModal','showToast','formatDate','formatCurrency',
-  'showArticleForm','editArticle','deleteArticle','loadArticles','showArticleDetail','exportArticlesCSV','importArticlesCSV','processImportCSV','saveArticle',
+  'showArticleForm','editArticle','deleteArticle','loadArticles','showArticleDetail','exportArticlesCSV','importArticlesCSV','processImportCSV','saveArticle','previewArticleImage',
   'showMoteurForm','showMoteurDetail','desassemblerMoteur','confirmDesassembler','reconstruireMoteur','loadMoteurs',
   'showClientForm','editClient','showClientDetail','showClientSituation','loadClients','saveClient',
   'showPaiementForm','loadSituation','exportSoldes','savePaiement',

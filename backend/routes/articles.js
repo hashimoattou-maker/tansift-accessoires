@@ -49,14 +49,14 @@ module.exports = function(db) {
   // POST /api/articles
   router.post('/', async (req, res) => {
     try {
-      const { reference, designation, categorie_id, type_article, prix_achat_ht, prix_vente_ht, tva_id, stock_min, stock_max, emplacement, poids, volume, description, est_moteur, stock_actuel } = req.body;
+      const { reference, designation, categorie_id, type_article, prix_achat_ht, prix_vente_ht, tva_id, stock_min, stock_max, emplacement, poids, volume, description, est_moteur, stock_actuel, image } = req.body;
       if (!reference || !designation) return res.status(400).json({ error: 'Référence et désignation requises' });
 
       const existing = await db.prepare(`SELECT id FROM articles WHERE reference = ?`).get(reference);
       if (existing) return res.status(400).json({ error: 'Cette référence existe déjà' });
 
-      const result = await db.prepare(`INSERT INTO articles (reference, designation, description, categorie_id, type_article, prix_achat_ht, prix_vente_ht, tva_id, stock_min, stock_max, emplacement, poids, volume, est_moteur, stock_actuel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-        .run(reference, designation, description, categorie_id || null, type_article || 'accessoire', prix_achat_ht || 0, prix_vente_ht || 0, tva_id || 1, stock_min || 0, stock_max || 0, emplacement || null, poids || null, volume || null, est_moteur ? 1 : 0, stock_actuel || 0);
+      const result = await db.prepare(`INSERT INTO articles (reference, designation, description, image, categorie_id, type_article, prix_achat_ht, prix_vente_ht, tva_id, stock_min, stock_max, emplacement, poids, volume, est_moteur, stock_actuel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(reference, designation, description || null, image || null, categorie_id || null, type_article || 'accessoire', prix_achat_ht || 0, prix_vente_ht || 0, tva_id || 1, stock_min || 0, stock_max || 0, emplacement || null, poids || null, volume || null, est_moteur ? 1 : 0, stock_actuel || 0);
 
       await auditLog(db, req.user?.id, 'CREATION', 'article', result.lastInsertRowid, { reference, designation });
       res.status(201).json({ id: result.lastInsertRowid, reference, designation });
@@ -71,9 +71,9 @@ module.exports = function(db) {
       const article = await db.prepare(`SELECT * FROM articles WHERE id = ?`).get(req.params.id);
       if (!article) return res.status(404).json({ error: 'Article introuvable' });
 
-      const { reference, designation, categorie_id, type_article, prix_achat_ht, prix_vente_ht, tva_id, stock_min, stock_max, emplacement, poids, volume, description, actif, est_moteur, moteur_complet, stock_actuel } = req.body;
-      await db.prepare(`UPDATE articles SET reference=?, designation=?, description=?, categorie_id=?, type_article=?, prix_achat_ht=?, prix_vente_ht=?, tva_id=?, stock_min=?, stock_max=?, emplacement=?, poids=?, volume=?, actif=?, est_moteur=?, moteur_complet=?, stock_actuel=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
-        .run(reference || article.reference, designation || article.designation, description !== undefined ? description : article.description, categorie_id || article.categorie_id, type_article || article.type_article, prix_achat_ht !== undefined ? prix_achat_ht : article.prix_achat_ht, prix_vente_ht !== undefined ? prix_vente_ht : article.prix_vente_ht, tva_id || article.tva_id, stock_min !== undefined ? stock_min : article.stock_min, stock_max !== undefined ? stock_max : article.stock_max, emplacement !== undefined ? emplacement : article.emplacement, poids !== undefined ? poids : article.poids, volume !== undefined ? volume : article.volume, actif !== undefined ? actif : article.actif, est_moteur !== undefined ? (est_moteur ? 1 : 0) : article.est_moteur, moteur_complet !== undefined ? (moteur_complet ? 1 : 0) : article.moteur_complet, stock_actuel !== undefined ? stock_actuel : article.stock_actuel, req.params.id);
+      const { reference, designation, categorie_id, type_article, prix_achat_ht, prix_vente_ht, tva_id, stock_min, stock_max, emplacement, poids, volume, description, actif, est_moteur, moteur_complet, stock_actuel, image } = req.body;
+      await db.prepare(`UPDATE articles SET reference=?, designation=?, description=?, image=?, categorie_id=?, type_article=?, prix_achat_ht=?, prix_vente_ht=?, tva_id=?, stock_min=?, stock_max=?, emplacement=?, poids=?, volume=?, actif=?, est_moteur=?, moteur_complet=?, stock_actuel=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+        .run(reference || article.reference, designation || article.designation, description !== undefined ? description : article.description, image !== undefined ? image : article.image, categorie_id || article.categorie_id, type_article || article.type_article, prix_achat_ht !== undefined ? prix_achat_ht : article.prix_achat_ht, prix_vente_ht !== undefined ? prix_vente_ht : article.prix_vente_ht, tva_id || article.tva_id, stock_min !== undefined ? stock_min : article.stock_min, stock_max !== undefined ? stock_max : article.stock_max, emplacement !== undefined ? emplacement : article.emplacement, poids !== undefined ? poids : article.poids, volume !== undefined ? volume : article.volume, actif !== undefined ? actif : article.actif, est_moteur !== undefined ? (est_moteur ? 1 : 0) : article.est_moteur, moteur_complet !== undefined ? (moteur_complet ? 1 : 0) : article.moteur_complet, stock_actuel !== undefined ? stock_actuel : article.stock_actuel, req.params.id);
 
       await auditLog(db, req.user?.id, 'MODIFICATION', 'article', req.params.id, req.body);
       res.json({ success: true });
