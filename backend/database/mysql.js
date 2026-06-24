@@ -634,6 +634,10 @@ async function createTables() {
 
   // Migration: catégorie Accessoires
   try { await pool.query(`INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)`, ['ACC', 'Accessoires', 20, 365]); } catch (e) { /* exists */ }
+
+  // Migration: nettoyer les anciens clients/fournisseurs supprimés (actif=0) pour renumérotation
+  try { await pool.query(`DELETE FROM clients WHERE actif = 0 AND code_client LIKE 'CLT-3421%'`); } catch (e) { /* exists */ }
+  try { await pool.query(`DELETE FROM fournisseurs WHERE actif = 0 AND code_fournisseur LIKE 'FR-4411%'`); } catch (e) { /* exists */ }
 }
 
 async function seedData() {

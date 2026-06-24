@@ -43,17 +43,14 @@ module.exports = function(db) {
       const { type_client, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement, plafond_credit, remise_defaut, note } = req.body;
       if (!raison_sociale) return res.status(400).json({ error: 'Raison sociale requise' });
 
-      const allCodes = await db.prepare(`SELECT code_client FROM clients WHERE code_client LIKE 'CLT-3421%'`).all();
-      let maxNum = 0;
-      for (const row of allCodes) {
-        const num = parseInt(row.code_client.replace('CLT-3421', ''), 10);
-        if (!isNaN(num) && num > maxNum) maxNum = num;
-      }
+      let num = 1;
       let code;
       do {
-        maxNum++;
-        code = `CLT-3421${String(maxNum).padStart(4, '0')}`;
-      } while (await db.prepare(`SELECT 1 FROM clients WHERE code_client = ?`).get(code));
+        code = `CLT-3421${String(num).padStart(4, '0')}`;
+        const taken = await db.prepare(`SELECT 1 FROM clients WHERE code_client = ?`).get(code);
+        if (!taken) break;
+        num++;
+      } while (num < 10000);
       const result = await db.prepare(`INSERT INTO clients (code_client, type_client, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement, plafond_credit, remise_defaut, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(code, type_client || 'Particulier', raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement || '30 jours', plafond_credit || 0, remise_defaut || 0, note);
 
