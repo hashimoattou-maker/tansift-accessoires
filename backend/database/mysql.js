@@ -750,29 +750,8 @@ async function seedData() {
       [ref, des, cat, pa, pv, stock, min, max, eml]);
   }
 
-  // Clients
-  const clientsDemo = [
-    ['CLT-34210001', 'Garage', 'Garage ALAMI', '0612345678', 'alami@email.ma', 'Casablanca', '12345678', '123456'],
-    ['CLT-34210002', 'Particulier', 'Ahmed BENCHARKA', '0698765432', 'bencharka@email.ma', 'Rabat', null, null],
-    ['CLT-34210003', 'Concessionnaire', 'Auto Prestige SARL', '0522123456', 'contact@autoprestige.ma', 'Marrakech', '87654321', '654321'],
-    ['CLT-34210004', 'Professionnel', 'Transports RAPIDO', '0522987654', 'info@rapido.ma', 'Tanger', '45678912', null],
-    ['CLT-34210005', 'Garage', 'Garage MODERNE', '0655112233', 'garage.moderne@email.ma', 'Fès', null, null]
-  ];
-  for (const [code, type, nom, tel, email, ville, ice, rc] of clientsDemo) {
-    await pool.query('INSERT IGNORE INTO clients (code_client, type_client, raison_sociale, telephone, email, ville, ice, rc) VALUES (?,?,?,?,?,?,?,?)',
-      [code, type, nom, tel, email, ville, ice, rc]);
-  }
-
-  // Fournisseurs
-  const frnDemo = [
-    ['FR-44110001', 'Parts Automotive Europe', '0522111111', 'info@parts-eu.com', 'Casablanca', 30, 4],
-    ['FR-44110002', 'Pièces Auto Maroc', '0522222222', 'contact@piecesauto.ma', 'Casablanca', 7, 5],
-    ['FR-44110003', 'Import Car Distribution', '0522333333', 'commandes@icd.ma', 'Tanger', 45, 3]
-  ];
-  for (const [code, nom, tel, email, ville, delai, eval_] of frnDemo) {
-    await pool.query('INSERT IGNORE INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, ville, delai_livraison_jours, evaluation) VALUES (?,?,?,?,?,?,?)',
-      [code, nom, tel, email, ville, delai, eval_]);
-  }
+  // Clients (seed disabled - codes generated automatically)
+  // Fournisseurs (seed disabled - codes generated automatically)
 }
 
 function getDatabase() {
