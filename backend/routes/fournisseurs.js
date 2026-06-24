@@ -37,8 +37,16 @@ module.exports = function(db) {
       try {
         const last = await db.prepare(`SELECT MAX(CAST(SUBSTRING(code_fournisseur, 8) AS UNSIGNED)) as maxNum FROM fournisseurs WHERE code_fournisseur LIKE 'FR-4411%'`).get();
         if (last && last.maxNum != null) nextNum = last.maxNum + 1;
-      } catch {}
-      const code = `FR-4411${String(nextNum).padStart(4, '0')}`;
+      } catch (e) { console.error('Error getting next fournisseur code:', e.message); }
+      let code;
+      let attempts = 0;
+      do {
+        code = `FR-4411${String(nextNum).padStart(4, '0')}`;
+        const exists = await db.prepare(`SELECT 1 FROM fournisseurs WHERE code_fournisseur = ?`).get(code);
+        if (!exists) break;
+        nextNum++;
+        attempts++;
+      } while (attempts < 100);
       const result = await db.prepare(`INSERT INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(code, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours || 15, banque, rib, conditions_paiement || '60 jours');
       res.status(201).json({ id: result.lastInsertRowid, code_fournisseur: code });
