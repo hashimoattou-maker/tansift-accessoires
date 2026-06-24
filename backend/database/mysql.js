@@ -635,25 +635,31 @@ async function createTables() {
   // Migration: catégorie Accessoires
   try { await pool.query(`INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)`, ['ACC', 'Accessoires', 20, 365]); } catch (e) { /* exists */ }
 
-  // Migration: nettoyer les anciens clients/fournisseurs supprimés (actif=0) pour renumérotation
+  // Migration: nettoyer les anciens clients/fournisseurs pour renumérotation propre
   try {
-    const [oldClients] = await pool.query(`SELECT id FROM clients WHERE actif = 0`);
+    const [oldClients] = await pool.query(`SELECT id FROM clients WHERE code_client LIKE 'CLT-3421%'`);
     for (const c of oldClients) {
       try { await pool.query(`DELETE FROM imputations_paiements WHERE client_id = ?`, [c.id]); } catch {}
       try { await pool.query(`DELETE FROM garanties WHERE client_id = ?`, [c.id]); } catch {}
       try { await pool.query(`DELETE FROM mouvements_stock WHERE client_id = ?`, [c.id]); } catch {}
       try { await pool.query(`UPDATE documents SET client_id = NULL WHERE client_id = ?`, [c.id]); } catch {}
       try { await pool.query(`DELETE FROM paiements_clients WHERE client_id = ?`, [c.id]); } catch {}
-      try { await pool.query(`DELETE FROM documents_lignes WHERE document_id IN (SELECT id FROM documents WHERE client_id = ?)`, [c.id]); } catch {}
-      await pool.query(`DELETE FROM clients WHERE id = ?`, [c.id]);
+      try {
+        const [docLignes] = await pool.query(`SELECT id FROM documents WHERE client_id = ?`, [c.id]);
+        for (const d of docLignes) {
+          try { await pool.query(`DELETE FROM documents_lignes WHERE document_id = ?`, [d.id]); } catch {}
+          try { await pool.query(`DELETE FROM documents WHERE id = ?`, [d.id]); } catch {}
+        }
+      } catch {}
+      try { await pool.query(`DELETE FROM clients WHERE id = ?`, [c.id]); } catch {}
     }
   } catch (e) { /* exists */ }
   try {
-    const [oldFrn] = await pool.query(`SELECT id FROM fournisseurs WHERE actif = 0`);
+    const [oldFrn] = await pool.query(`SELECT id FROM fournisseurs WHERE code_fournisseur LIKE 'FR-4411%'`);
     for (const f of oldFrn) {
       try { await pool.query(`UPDATE documents SET fournisseur_id = NULL WHERE fournisseur_id = ?`, [f.id]); } catch {}
       try { await pool.query(`DELETE FROM mouvements_stock WHERE fournisseur_id = ?`, [f.id]); } catch {}
-      await pool.query(`DELETE FROM fournisseurs WHERE id = ?`, [f.id]);
+      try { await pool.query(`DELETE FROM fournisseurs WHERE id = ?`, [f.id]); } catch {}
     }
   } catch (e) { /* exists */ }
 }
