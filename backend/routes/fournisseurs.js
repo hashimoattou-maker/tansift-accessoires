@@ -33,14 +33,11 @@ module.exports = function(db) {
     try {
       const { raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement } = req.body;
       if (!raison_sociale) return res.status(400).json({ error: 'Raison sociale requise' });
-      const last = await db.prepare(`SELECT code_fournisseur FROM fournisseurs ORDER BY id DESC LIMIT 1`).get();
       let nextNum = 1;
-      if (last && last.code_fournisseur && last.code_fournisseur.startsWith('FR-4411')) {
-        nextNum = parseInt(last.code_fournisseur.slice(-4)) + 1;
-      } else {
-        const count = await db.prepare(`SELECT COUNT(*) as cnt FROM fournisseurs`).get();
-        nextNum = (count?.cnt || 0) + 1;
-      }
+      try {
+        const last = await db.prepare(`SELECT MAX(CAST(SUBSTRING(code_fournisseur, 8) AS UNSIGNED)) as maxNum FROM fournisseurs WHERE code_fournisseur LIKE 'FR-4411%'`).get();
+        if (last && last.maxNum != null) nextNum = last.maxNum + 1;
+      } catch {}
       const code = `FR-4411${String(nextNum).padStart(4, '0')}`;
       const result = await db.prepare(`INSERT INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(code, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours || 15, banque, rib, conditions_paiement || '60 jours');
