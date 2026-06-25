@@ -6,3 +6,5 @@ uploads/*
 *.log
 .DS_Store
 .env
+migration/database.sql
+migration/uploads.tar.gz
