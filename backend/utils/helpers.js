@@ -18,7 +18,7 @@ async function generateDocumentNumber(db, typeDocument) {
 }
 
 async function generateSequentialCode(db, table, column, prefix, padLen = 4) {
-  const rows = await db.prepare(`SELECT ${column} FROM ${table} WHERE ${column} LIKE ?`).all(`${prefix}%`);
+  const rows = await db.prepare(`SELECT ${column} FROM ${table} WHERE ${column} LIKE ? AND actif = 1`).all(`${prefix}%`);
   const used = new Set();
   for (const row of rows) {
     const raw = row[column];
