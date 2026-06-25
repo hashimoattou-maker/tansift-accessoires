@@ -76,7 +76,7 @@ module.exports = function(db) {
     try {
       const client = await db.prepare(`SELECT id FROM clients WHERE id = ?`).get(req.params.id);
       if (!client) return res.status(404).json({ error: 'Client introuvable' });
-      await db.prepare(`UPDATE clients SET actif = 0 WHERE id = ?`).run(req.params.id);
+      await db.prepare(`UPDATE clients SET actif = 0, code_client = CONCAT('DEL-', code_client) WHERE id = ?`).run(req.params.id);
       await auditLog(db, req.user?.id, 'SUPPRESSION', 'client', req.params.id, {});
       res.json({ success: true });
     } catch (e) {

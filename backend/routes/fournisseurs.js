@@ -61,7 +61,7 @@ module.exports = function(db) {
     try {
       const frn = await db.prepare(`SELECT id FROM fournisseurs WHERE id = ?`).get(req.params.id);
       if (!frn) return res.status(404).json({ error: 'Fournisseur introuvable' });
-      await db.prepare(`UPDATE fournisseurs SET actif = 0 WHERE id = ?`).run(req.params.id);
+      await db.prepare(`UPDATE fournisseurs SET actif = 0, code_fournisseur = CONCAT('DEL-', code_fournisseur) WHERE id = ?`).run(req.params.id);
       await auditLog(db, req.user?.id, 'SUPPRESSION', 'fournisseur', req.params.id, {});
       res.json({ success: true });
     } catch (e) {
