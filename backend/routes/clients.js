@@ -74,10 +74,11 @@ module.exports = function(db) {
   // DELETE /api/clients/:id
   router.delete('/:id', async (req, res) => {
     try {
-      const client = await db.prepare(`SELECT id, code_client FROM clients WHERE id = ?`).get(req.params.id);
+      const client = await db.prepare(`SELECT id FROM clients WHERE id = ?`).get(req.params.id);
       if (!client) return res.status(404).json({ error: 'Client introuvable' });
-      const delCode = 'DEL-' + client.code_client;
-      await db.prepare(`UPDATE clients SET actif = 0, code_client = ? WHERE id = ?`).run(delCode, client.id);
+      await db.prepare(`DELETE FROM paiements_clients WHERE client_id = ?`).run(client.id);
+      await db.prepare(`UPDATE documents SET client_id = NULL WHERE client_id = ?`).run(client.id);
+      await db.prepare(`DELETE FROM clients WHERE id = ?`).run(client.id);
       res.json({ success: true });
     } catch (e) {
       console.error('Erreur suppression client:', e.message || e);
