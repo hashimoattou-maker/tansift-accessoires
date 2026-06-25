@@ -77,12 +77,11 @@ module.exports = function(db) {
       const client = await db.prepare(`SELECT id, code_client FROM clients WHERE id = ?`).get(req.params.id);
       if (!client) return res.status(404).json({ error: 'Client introuvable' });
       const delCode = 'DEL-' + client.code_client;
-      await db.prepare(`UPDATE clients SET actif = 0, code_client = ? WHERE id = ?`).run(delCode, req.params.id);
-      try { await auditLog(db, req.user?.id || null, 'SUPPRESSION', 'client', req.params.id, {}); } catch {}
+      await db.prepare(`UPDATE clients SET actif = 0, code_client = ? WHERE id = ?`).run(delCode, client.id);
       res.json({ success: true });
     } catch (e) {
-      console.error('Erreur suppression client:', e);
-      res.status(500).json({ error: 'Erreur lors de la suppression' });
+      console.error('Erreur suppression client:', e.message || e);
+      res.status(500).json({ error: e.message || 'Erreur lors de la suppression' });
     }
   });
 

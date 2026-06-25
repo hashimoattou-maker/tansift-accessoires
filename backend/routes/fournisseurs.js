@@ -62,11 +62,10 @@ module.exports = function(db) {
       const frn = await db.prepare(`SELECT id, code_fournisseur FROM fournisseurs WHERE id = ?`).get(req.params.id);
       if (!frn) return res.status(404).json({ error: 'Fournisseur introuvable' });
       const delCode = 'DEL-' + frn.code_fournisseur;
-      await db.prepare(`UPDATE fournisseurs SET actif = 0, code_fournisseur = ? WHERE id = ?`).run(delCode, req.params.id);
-      try { await auditLog(db, req.user?.id || null, 'SUPPRESSION', 'fournisseur', req.params.id, {}); } catch {}
+      await db.prepare(`UPDATE fournisseurs SET actif = 0, code_fournisseur = ? WHERE id = ?`).run(delCode, frn.id);
       res.json({ success: true });
     } catch (e) {
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e.message || 'Erreur lors de la suppression' });
     }
   });
 
