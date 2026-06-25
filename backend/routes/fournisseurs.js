@@ -59,10 +59,11 @@ module.exports = function(db) {
   // DELETE /api/fournisseurs/:id
   router.delete('/:id', async (req, res) => {
     try {
-      const frn = await db.prepare(`SELECT id FROM fournisseurs WHERE id = ?`).get(req.params.id);
+      const frn = await db.prepare(`SELECT id, code_fournisseur FROM fournisseurs WHERE id = ?`).get(req.params.id);
       if (!frn) return res.status(404).json({ error: 'Fournisseur introuvable' });
-      await db.prepare(`UPDATE fournisseurs SET actif = 0, code_fournisseur = CONCAT('DEL-', code_fournisseur) WHERE id = ?`).run(req.params.id);
-      await auditLog(db, req.user?.id, 'SUPPRESSION', 'fournisseur', req.params.id, {});
+      const delCode = 'DEL-' + frn.code_fournisseur;
+      await db.prepare(`UPDATE fournisseurs SET actif = 0, code_fournisseur = ? WHERE id = ?`).run(delCode, req.params.id);
+      try { await auditLog(db, req.user?.id || null, 'SUPPRESSION', 'fournisseur', req.params.id, {}); } catch {}
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: e.message });
