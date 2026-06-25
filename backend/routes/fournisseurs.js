@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { auditLog } = require('../utils/helpers');
+const { auditLog, generateSequentialCode } = require('../utils/helpers');
 
 module.exports = function(db) {
   router.get('/', async (req, res) => {
@@ -33,14 +33,8 @@ module.exports = function(db) {
     try {
       const { raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement } = req.body;
       if (!raison_sociale) return res.status(400).json({ error: 'Raison sociale requise' });
-      let num = 1;
-      let code;
-      do {
-        code = `FR-4411${String(num).padStart(4, '0')}`;
-        const taken = await db.prepare(`SELECT 1 FROM fournisseurs WHERE code_fournisseur = ?`).get(code);
-        if (!taken) break;
-        num++;
-      } while (num < 10000);
+
+      const code = await generateSequentialCode(db, 'fournisseurs', 'code_fournisseur', 'FR-4411');
       const result = await db.prepare(`INSERT INTO fournisseurs (code_fournisseur, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours, banque, rib, conditions_paiement) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(code, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, delai_livraison_jours || 15, banque, rib, conditions_paiement || '60 jours');
       res.status(201).json({ id: result.lastInsertRowid, code_fournisseur: code });

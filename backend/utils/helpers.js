@@ -17,6 +17,20 @@ async function generateDocumentNumber(db, typeDocument) {
   return numero;
 }
 
+async function generateSequentialCode(db, table, column, prefix, padLen = 4) {
+  const rows = await db.prepare(`SELECT ${column} FROM ${table} WHERE ${column} LIKE ?`).all(`${prefix}%`);
+  const used = new Set();
+  for (const row of rows) {
+    const raw = row[column];
+    if (!raw || !raw.startsWith(prefix)) continue;
+    const n = parseInt(raw.slice(prefix.length), 10);
+    if (!isNaN(n)) used.add(n);
+  }
+  let next = 1;
+  while (used.has(next) && next < 100000) next++;
+  return `${prefix}${String(next).padStart(padLen, '0')}`;
+}
+
 async function updateClientSolde(db, clientId) {
   const row = await db.prepare(`
     SELECT 

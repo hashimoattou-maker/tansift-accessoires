@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { updateClientSolde, auditLog, generateDocumentNumber } = require('../utils/helpers');
+const { updateClientSolde, auditLog, generateDocumentNumber, generateSequentialCode } = require('../utils/helpers');
 
 module.exports = function(db) {
   // GET /api/clients
@@ -43,14 +43,7 @@ module.exports = function(db) {
       const { type_client, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement, plafond_credit, remise_defaut, note } = req.body;
       if (!raison_sociale) return res.status(400).json({ error: 'Raison sociale requise' });
 
-      let num = 1;
-      let code;
-      do {
-        code = `CLT-3421${String(num).padStart(4, '0')}`;
-        const taken = await db.prepare(`SELECT 1 FROM clients WHERE code_client = ?`).get(code);
-        if (!taken) break;
-        num++;
-      } while (num < 10000);
+      const code = await generateSequentialCode(db, 'clients', 'code_client', 'CLT-3421');
       const result = await db.prepare(`INSERT INTO clients (code_client, type_client, raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement, plafond_credit, remise_defaut, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(code, type_client || 'Particulier', raison_sociale, telephone, email, adresse, ville, ice, if_fiscal, rc, cnss, patente, conditions_paiement || '30 jours', plafond_credit || 0, remise_defaut || 0, note);
 
