@@ -52,4 +52,4 @@ async function updateArticleStock(db, articleId) {
   return row.stock || 0;
 }
 
-module.exports = { auditLog, generateDocumentNumber, updateClientSolde, updateArticleStock };
+module.exports = { auditLog, generateDocumentNumber, generateSequentialCode, updateClientSolde, updateArticleStock };
