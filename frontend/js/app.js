@@ -1204,7 +1204,7 @@ function showClientForm(id) {
           <div class="form-group"><label>IF</label><input name="if_fiscal" class="form-control" value="${c.if_fiscal||''}"></div></div>
           <div class="form-row"><div class="form-group"><label>RC</label><input name="rc" class="form-control" value="${c.rc||''}"></div>
           <div class="form-group"><label>CNSS</label><input name="cnss" class="form-control" value="${c.cnss||''}"></div></div>
-          <div class="form-row"><div class="form-group"><label>Patente</label><input name="patente" class="form-control" value="${c.patente||''}"></div>
+          <div class="form-row"><div class="form-group"><label>Taxe professionnelle</label><input name="patente" class="form-control" value="${c.patente||''}"></div>
           <div class="form-group"><label>Plafond crédit</label><input name="plafond_credit" type="number" step="0.01" class="form-control" value="${c.plafond_credit}"></div></div>
           <div class="form-row"><div class="form-group"><label>Remise %</label><input name="remise_defaut" type="number" step="0.01" class="form-control" value="${c.remise_defaut}"></div>
           <div class="form-group"><label>Conditions paiement</label><input name="conditions_paiement" class="form-control" value="${c.conditions_paiement}"></div></div>
@@ -1225,7 +1225,7 @@ function showClientForm(id) {
         <div class="form-group"><label>IF</label><input name="if_fiscal" class="form-control"></div></div>
         <div class="form-row"><div class="form-group"><label>RC</label><input name="rc" class="form-control"></div>
         <div class="form-group"><label>CNSS</label><input name="cnss" class="form-control"></div></div>
-        <div class="form-row"><div class="form-group"><label>Patente</label><input name="patente" class="form-control"></div>
+        <div class="form-row"><div class="form-group"><label>Taxe professionnelle</label><input name="patente" class="form-control"></div>
         <div class="form-group"><label>Plafond crédit</label><input name="plafond_credit" type="number" step="0.01" class="form-control" value="0"></div></div>
         <div class="form-row"><div class="form-group"><label>Remise %</label><input name="remise_defaut" type="number" step="0.01" class="form-control" value="0"></div>
         <div class="form-group"><label>Conditions paiement</label><input name="conditions_paiement" class="form-control" value="30 jours"></div></div>
@@ -2665,7 +2665,7 @@ function switchParamTab(el, tab) {
               <div class="form-group"><label>IF</label><input name="societe_if" class="form-control" value="${p.societe_if||''}"></div></div>
               <div class="form-row"><div class="form-group"><label>RC</label><input name="societe_rc" class="form-control" value="${p.societe_rc||''}"></div>
               <div class="form-group"><label>CNSS</label><input name="societe_cnss" class="form-control" value="${p.societe_cnss||''}"></div></div>
-              <div class="form-row"><div class="form-group"><label>Patente</label><input name="societe_patente" class="form-control" value="${p.societe_patente||''}"></div>
+              <div class="form-row"><div class="form-group"><label>Taxe professionnelle</label><input name="societe_patente" class="form-control" value="${p.societe_patente||''}"></div>
               <div class="form-group"><label>Téléphone</label><input name="societe_telephone" class="form-control" value="${p.societe_telephone||''}"></div></div>
               <div class="form-row"><div class="form-group"><label>Email</label><input name="societe_email" type="email" class="form-control" value="${p.societe_email||''}"></div>
               <div class="form-group"><label>Ville</label><input name="societe_ville" class="form-control" value="${p.societe_ville||''}"></div></div>
