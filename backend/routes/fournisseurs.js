@@ -11,7 +11,7 @@ module.exports = function(db) {
       if (search) { sql += ` AND (raison_sociale LIKE ? OR code_fournisseur LIKE ?)`; params.push(`%${search}%`, `%${search}%`); }
       const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql}) AS _sub`).get(...params);
       const offset = (parseInt(page) - 1) * parseInt(limit);
-      sql += ` ORDER BY raison_sociale LIMIT ? OFFSET ?`;
+      sql += ` ORDER BY code_fournisseur LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
       res.json({ fournisseurs: await db.prepare(sql).all(...params), total: total.total });
     } catch (e) {
