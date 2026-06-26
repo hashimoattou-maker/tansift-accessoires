@@ -332,6 +332,20 @@ module.exports = function(db) {
       await db.prepare(`UPDATE documents SET montant_ht = montant_ht + ?, total_tva = total_tva + ?, montant_ttc = montant_ttc + ?, net_a_payer = net_a_payer + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
         .run(montantHT, montantTVA, montantTTC, montantTTC, doc.id);
 
+      if (doc.type_document === 'bon_reception') {
+        const stockApres = article.stock_actuel + qte;
+        await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_id, document_type, document_numero, fournisseur_id, utilisateur_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+          .run(article_id, 'entree', qte, article.stock_actuel, stockApres, doc.id, doc.type_document, doc.numero, doc.fournisseur_id || null, req.user?.id);
+        await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(stockApres, article_id);
+      }
+
+      if (doc.type_document === 'bon_livraison') {
+        const stockApres = article.stock_actuel - qte;
+        await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_id, document_type, document_numero, client_id, utilisateur_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+          .run(article_id, 'sortie', qte, article.stock_actuel, stockApres, doc.id, doc.type_document, doc.numero, doc.client_id || null, req.user?.id);
+        await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(stockApres, article_id);
+      }
+
       res.status(201).json({ id: result.lastInsertRowid, montant_ht: montantHT, montant_ttc: montantTTC });
     } catch (e) {
       res.status(500).json({ error: e.message });
