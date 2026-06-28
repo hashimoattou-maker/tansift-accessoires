@@ -103,7 +103,8 @@ async function initializeDatabase() {
     queueLimit: 0,
     charset: 'utf8mb4',
     timezone: '+00:00',
-    dateStrings: true
+    dateStrings: true,
+    connectTimeout: 10000
   });
 
   console.log(`✓ Connecté à MySQL ${dbHost}:${dbPort}/${dbName}`);

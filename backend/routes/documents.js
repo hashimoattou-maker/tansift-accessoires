@@ -58,7 +58,7 @@ module.exports = function(db) {
         await db.prepare(`UPDATE documents SET montant_ht = ?, total_tva = ?, montant_ttc = ?, net_a_payer = ? WHERE id = ?`)
           .run(totalHT, totalTVA, totalTTC, totalTTC, docId);
 
-        // Stock: sorties pour bon_livraison, entrées pour bon_reception
+        // Stock: sorties pour bon_livraison
         if (['bon_livraison'].includes(type_document)) {
           await db.run('START TRANSACTION');
           try {
@@ -80,27 +80,6 @@ module.exports = function(db) {
               if (stockApres <= 0) {
                 await db.prepare(`DELETE FROM nomenclature_moteur WHERE composant_id = ?`).run(ligne.article_id);
               }
-            }
-            await db.run('COMMIT');
-          } catch (txError) {
-            await db.run('ROLLBACK');
-            throw txError;
-          }
-        }
-
-        if (['bon_reception'].includes(type_document)) {
-          await db.run('START TRANSACTION');
-          try {
-            for (const ligne of lignes) {
-              if (!ligne.article_id) continue;
-              const article = await db.prepare(`SELECT stock_actuel FROM articles WHERE id = ?`).get(ligne.article_id);
-              if (!article) continue;
-
-              const qte = ligne.quantite || 1;
-              const stockApres = article.stock_actuel + qte;
-              await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_id, document_type, document_numero, fournisseur_id, utilisateur_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
-                .run(ligne.article_id, 'entree', qte, article.stock_actuel, stockApres, docId, type_document, numero, fournisseur_id || null, req.user?.id);
-              await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(stockApres, ligne.article_id);
             }
             await db.run('COMMIT');
           } catch (txError) {
@@ -331,13 +310,6 @@ module.exports = function(db) {
 
       await db.prepare(`UPDATE documents SET montant_ht = montant_ht + ?, total_tva = total_tva + ?, montant_ttc = montant_ttc + ?, net_a_payer = net_a_payer + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
         .run(montantHT, montantTVA, montantTTC, montantTTC, doc.id);
-
-      if (doc.type_document === 'bon_reception') {
-        const stockApres = article.stock_actuel + qte;
-        await db.prepare(`INSERT INTO mouvements_stock (article_id, type_mouvement, quantite, stock_avant, stock_apres, document_id, document_type, document_numero, fournisseur_id, utilisateur_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
-          .run(article_id, 'entree', qte, article.stock_actuel, stockApres, doc.id, doc.type_document, doc.numero, doc.fournisseur_id || null, req.user?.id);
-        await db.prepare(`UPDATE articles SET stock_actuel = ? WHERE id = ?`).run(stockApres, article_id);
-      }
 
       if (doc.type_document === 'bon_livraison') {
         const stockApres = article.stock_actuel - qte;
