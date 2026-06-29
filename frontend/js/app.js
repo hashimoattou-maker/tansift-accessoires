@@ -1797,6 +1797,19 @@ window.addDocLigne = function(type) {
   clone.querySelector('.qte-input').value = 1;
   const res = clone.querySelector('.autocomplete-results');
   if (res) res.classList.remove('show');
+
+  const artInput = clone.querySelector('.autocomplete-input');
+  if (artInput) {
+    artInput.dataset.articleId = '';
+    artInput.oninput = function() { searchDocArticle(this); };
+    artInput.onfocus = function() { searchDocArticle(this); };
+    artInput.onblur = function() { setTimeout(()=>this.parentElement.querySelector('.autocomplete-results')?.classList.remove('show'),250); };
+  }
+  const qteInput = clone.querySelector('.qte-input');
+  if (qteInput) qteInput.oninput = function() { calcDocLigne(this); };
+  const prixInput = clone.querySelector('.prix-input');
+  if (prixInput) { prixInput.oninput = function() { calcDocLigne(this); }; prixInput.dataset.tauxTva = '20'; }
+
   container.appendChild(clone);
   updateDocTotal();
 };
