@@ -34,7 +34,7 @@ module.exports = function(db) {
         FROM nomenclature_moteur nm JOIN articles a ON nm.composant_id = a.id WHERE nm.moteur_id = ?
       `).all(req.params.id);
 
-      const decompositions = await db.prepare(`SELECT d.*, u.nom as utilisateur_nom FROM decompositions d LEFT JOIN utilisateurs u ON d.utilisateur_id = u.id WHERE d.moteur_id = ? ORDER BY d.date_decomposition DESC`).all(req.params.id);
+      const decompositions = await db.prepare(`SELECT d.*, u.nom as utilisateur_nom FROM decompositions d LEFT JOIN utilisateurs u ON d.utilisateur_id = u.id WHERE d.parent_article_id = ? ORDER BY d.date_decomposition DESC`).all(req.params.id);
 
       res.json({ moteur, nomenclature, decompositions });
     } catch (e) {
@@ -67,7 +67,7 @@ module.exports = function(db) {
 
       await db.run('START TRANSACTION');
       try {
-        const decompResult = await db.prepare(`INSERT INTO decompositions (moteur_id, utilisateur_id, motif) VALUES (?,?,?)`)
+        const decompResult = await db.prepare(`INSERT INTO decompositions (parent_article_id, utilisateur_id, motif) VALUES (?,?,?)`)
           .run(req.params.id, req.user?.id, 'Désassemblage manuel');
         const decompId = decompResult.lastInsertRowid;
 

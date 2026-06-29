@@ -150,7 +150,7 @@ module.exports = function(db) {
         JOIN decompositions_lignes dl ON dc.id = dl.decomposition_id
         LEFT JOIN articles a ON dl.composant_id = a.id
         LEFT JOIN utilisateurs u ON dc.utilisateur_id = u.id
-        WHERE dc.moteur_id = ?
+        WHERE dc.parent_article_id = ?
         ORDER BY dc.date_decomposition DESC
       `).all(unitId);
 
