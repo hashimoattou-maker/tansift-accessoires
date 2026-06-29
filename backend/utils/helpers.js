@@ -18,15 +18,20 @@ async function generateDocumentNumber(db, typeDocument) {
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
   const jour = `${yyyy}${mm}${dd}`;
+  const pattern = `${prefix}-${jour}-%`;
 
-  await db.prepare(`
-    INSERT INTO doc_counters (type_document, jour, counter)
-    VALUES (?, ?, LAST_INSERT_ID(1))
-    ON DUPLICATE KEY UPDATE counter = LAST_INSERT_ID(counter + 1)
-  `).run(typeDocument, jour);
+  const all = await db.prepare(`SELECT numero FROM documents WHERE numero LIKE ?`).all(pattern);
+  const used = new Set();
+  for (const row of all) {
+    if (!row.numero) continue;
+    const parts = row.numero.split('-');
+    const n = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(n)) used.add(n);
+  }
+  let seq = 1;
+  while (used.has(seq) && seq < 999) seq++;
 
-  const row = (await db.prepare(`SELECT LAST_INSERT_ID() as seq`).get());
-  return `${prefix}-${jour}-${String(row.seq).padStart(3, '0')}`;
+  return `${prefix}-${jour}-${String(seq).padStart(3, '0')}`;
 }
 
 async function generateSequentialCode(db, table, column, prefix, padLen = 4) {
