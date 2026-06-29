@@ -635,6 +635,17 @@ async function createTables() {
 
   // Migration: catégorie Accessoires
   try { await pool.query(`INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)`, ['ACC', 'Accessoires', 20, 365]); } catch (e) { /* exists */ }
+
+  // Migration: table doc_counters pour numérotation chronologique
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS doc_counters (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      type_document VARCHAR(100) NOT NULL,
+      jour VARCHAR(8) NOT NULL,
+      counter INT DEFAULT 0,
+      UNIQUE KEY uk_type_jour (type_document, jour)
+    )`);
+  } catch (e) { /* exists */ }
 }
 
 async function seedData() {
@@ -675,17 +686,6 @@ async function seedData() {
   ];
   for (const [cle, valeur, type, section] of parametres) {
     await pool.query('INSERT IGNORE INTO parametres (cle, valeur, type, section) VALUES (?,?,?,?)', [cle, valeur, type, section]);
-  }
-
-  // Sequences
-  const year = new Date().getFullYear().toString();
-  const sequences = [
-    ['DEV-', 'devis'], ['BCC-', 'bon_commande_client'], ['BL-', 'bon_livraison'],
-    ['FAC-', 'facture_client'], ['AVOIR-', 'avoir_client'], ['DA-', 'demande_achat'],
-    ['CF-', 'commande_fournisseur'], ['BR-', 'bon_reception'], ['FAF-', 'facture_fournisseur']
-  ];
-  for (const [prefixe, type] of sequences) {
-    await pool.query('INSERT IGNORE INTO sequences (prefixe, type_document, derniere_valeur, annee) VALUES (?,?,0,?)', [prefixe, type, year]);
   }
 
   // Categories

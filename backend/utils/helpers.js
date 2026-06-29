@@ -6,15 +6,27 @@ async function auditLog(db, utilisateur_id, action, entite, entite_id, details, 
 }
 
 async function generateDocumentNumber(db, typeDocument) {
-  const row = await db.prepare(`SELECT * FROM sequences WHERE type_document = ?`).get(typeDocument);
-  if (!row) return typeDocument + '-0001';
+  const prefixes = {
+    devis: 'DEV', demande_achat: 'DA', bon_commande_client: 'BCC',
+    commande_fournisseur: 'CF', bon_livraison: 'BL', bon_reception: 'BR',
+    facture_client: 'FAC', facture_fournisseur: 'FAF', avoir_client: 'AVOIR',
+    avoir_fournisseur: 'AVOF'
+  };
+  const prefix = prefixes[typeDocument] || typeDocument.substring(0, 3).toUpperCase();
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const jour = `${yyyy}${mm}${dd}`;
 
-  const newVal = row.derniere_valeur + 1;
-  const annee = new Date().getFullYear();
-  const numero = `${row.prefixe}${annee}-${String(newVal).padStart(4, '0')}`;
+  await db.prepare(`
+    INSERT INTO doc_counters (type_document, jour, counter)
+    VALUES (?, ?, LAST_INSERT_ID(1))
+    ON DUPLICATE KEY UPDATE counter = LAST_INSERT_ID(counter + 1)
+  `).run(typeDocument, jour);
 
-  await db.prepare(`UPDATE sequences SET derniere_valeur = ? WHERE type_document = ?`).run(newVal, typeDocument);
-  return numero;
+  const row = (await db.prepare(`SELECT LAST_INSERT_ID() as seq`).get());
+  return `${prefix}-${yyyy}-${jour}-${String(row.seq).padStart(3, '0')}`;
 }
 
 async function generateSequentialCode(db, table, column, prefix, padLen = 4) {

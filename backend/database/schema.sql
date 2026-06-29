@@ -392,14 +392,13 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX idx_notifications_user ON notifications(utilisateur_id);
 
--- ==================== SEQUENCES (numérotation auto) ====================
-CREATE TABLE IF NOT EXISTS sequences (
+-- ==================== DOC_COUNTERS (numérotation chronologique) ====================
+CREATE TABLE IF NOT EXISTS doc_counters (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  prefixe TEXT NOT NULL,
-  type_document TEXT NOT NULL UNIQUE,
-  derniere_valeur INTEGER DEFAULT 0,
-  annee TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  type_document TEXT NOT NULL,
+  jour TEXT NOT NULL,
+  counter INTEGER DEFAULT 0,
+  UNIQUE(type_document, jour)
 );
 
 -- ==================== TAUX TVA ====================
@@ -453,17 +452,6 @@ INSERT OR IGNORE INTO parametres (cle, valeur, type, section) VALUES
   ('delai_relance_2', '60', 'number', 'alertes'),
   ('delai_contentieux', '90', 'number', 'alertes'),
   ('marge_minimale', '15', 'number', 'configuration');
-
-INSERT OR IGNORE INTO sequences (prefixe, type_document, derniere_valeur, annee) VALUES
-  ('DEV-', 'devis', 0, strftime('%Y','now')),
-  ('BCC-', 'bon_commande_client', 0, strftime('%Y','now')),
-  ('BL-', 'bon_livraison', 0, strftime('%Y','now')),
-  ('FAC-', 'facture_client', 0, strftime('%Y','now')),
-  ('AVOIR-', 'avoir_client', 0, strftime('%Y','now')),
-  ('DA-', 'demande_achat', 0, strftime('%Y','now')),
-  ('CF-', 'commande_fournisseur', 0, strftime('%Y','now')),
-  ('BR-', 'bon_reception', 0, strftime('%Y','now')),
-  ('FAF-', 'facture_fournisseur', 0, strftime('%Y','now'));
 
 -- Admin par défaut (mot de passe: admin123)
 INSERT OR IGNORE INTO utilisateurs (nom, email, mot_de_passe, role)
