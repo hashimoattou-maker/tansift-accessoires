@@ -26,7 +26,7 @@ async function generateDocumentNumber(db, typeDocument) {
   `).run(typeDocument, jour);
 
   const row = (await db.prepare(`SELECT LAST_INSERT_ID() as seq`).get());
-  return `${prefix}-${yyyy}-${jour}-${String(row.seq).padStart(3, '0')}`;
+  return `${prefix}-${jour}-${String(row.seq).padStart(3, '0')}`;
 }
 
 async function generateSequentialCode(db, table, column, prefix, padLen = 4) {
