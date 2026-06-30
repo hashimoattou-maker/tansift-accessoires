@@ -13,25 +13,21 @@ async function generateDocumentNumber(db, typeDocument) {
     avoir_fournisseur: 'AVOF'
   };
   const prefix = prefixes[typeDocument] || typeDocument.substring(0, 3).toUpperCase();
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const jour = `${yyyy}${mm}${dd}`;
-  const pattern = `${prefix}-${jour}-%`;
+  const yyyy = new Date().getFullYear();
+  const pattern = `${prefix}-%-${yyyy}`;
 
-  const all = await db.prepare(`SELECT numero FROM documents WHERE numero LIKE ?`).all(pattern);
+  const all = await db.prepare(`SELECT numero FROM documents WHERE numero LIKE ?`).all(`${prefix}-%-${yyyy}`);
   const used = new Set();
   for (const row of all) {
     if (!row.numero) continue;
     const parts = row.numero.split('-');
-    const n = parseInt(parts[parts.length - 1], 10);
+    const n = parseInt(parts[1], 10);
     if (!isNaN(n)) used.add(n);
   }
   let seq = 1;
-  while (used.has(seq) && seq < 999) seq++;
+  while (used.has(seq) && seq < 99999) seq++;
 
-  return `${prefix}-${jour}-${String(seq).padStart(3, '0')}`;
+  return `${prefix}-${String(seq).padStart(5, '0')}-${yyyy}`;
 }
 
 async function generateSequentialCode(db, table, column, prefix, padLen = 4) {
