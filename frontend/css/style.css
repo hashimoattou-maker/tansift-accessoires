@@ -509,6 +509,7 @@ tbody tr:hover { background: var(--bg); }
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
   max-height: 220px; overflow-y: auto; box-shadow: var(--shadow-lg); display: none;
 }
+#editDocTable td { position: relative; }
 .autocomplete-results.show { display: block; }
 .autocomplete-item { padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.82rem; border-bottom: 1px solid var(--border-light); }
 .autocomplete-item:last-child { border-bottom: none; }
