@@ -1721,6 +1721,7 @@ function showDocumentForm(type) {
         <div class="form-row">
           <div class="form-group"><label>Type document *</label><select name="type_document" class="form-select" id="docTypeSelect" onchange="toggleDocEntity()">${docTypeOptions}</select></div>
           <div class="form-group"><label>${isAchat ? 'Fournisseur' : 'Client'} *</label><select name="entity_id" class="form-select" id="docEntity">${entityOpts}</select></div>
+          <div class="form-group"><label>Date</label><input type="date" name="date_document" class="form-control" value="${new Date().toISOString().slice(0, 10)}"></div>
         </div>
         <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea"></textarea></div>
         <h4 style="margin:0.5rem 0">Lignes du document</h4>
@@ -1966,6 +1967,7 @@ async function saveDocument(e, type) {
   const body = {
     type_document,
     [isAchat ? 'fournisseur_id' : 'client_id']: parseInt(entity_id),
+    date_document: data.get('date_document') || null,
     notes: data.get('notes'),
     lignes
   };
@@ -1983,7 +1985,7 @@ function editDocument(id) {
     const canEdit = d.statut !== 'paye' && d.statut !== 'annule';
     let htmlContent = html`
       <div class="stat-row"><div class="stat-item"><div class="stat-value">${d.numero}</div><div class="stat-label">Document</div></div>
-      <div class="stat-item"><div class="stat-value">${formatDate(d.date_document)}</div><div class="stat-label">Date</div></div>
+      <div class="stat-item"><div class="stat-value">${canEdit ? `<input type="date" id="editDocDate" class="form-control" value="${(d.date_document||'').slice(0,10)}" style="width:160px;font-size:0.9rem;text-align:center">` : formatDate(d.date_document)}</div><div class="stat-label">Date</div></div>
       <div class="stat-item"><div class="stat-value">${d.client_nom || d.fournisseur_nom || '-'}</div><div class="stat-label">Tiers</div></div>
       <div class="stat-item"><div class="stat-value" style="color:var(--accent)">${formatCurrency(d.net_a_payer)}</div><div class="stat-label">Net à payer</div></div></div>
       <div class="status-flow" style="margin-top:1rem">
@@ -2154,10 +2156,14 @@ async function saveEditDocument(docId) {
     await Promise.all(promises);
 
     const notesEl = $('#editDocNotes');
-    if (notesEl) {
+    const dateEl = $('#editDocDate');
+    const updateBody = {};
+    if (notesEl) updateBody.notes = notesEl.value;
+    if (dateEl) updateBody.date_document = dateEl.value;
+    if (Object.keys(updateBody).length) {
       await apiFetch(`/documents/${docId}`, {
         method: 'PUT',
-        body: JSON.stringify({ notes: notesEl.value })
+        body: JSON.stringify(updateBody)
       });
     }
 
