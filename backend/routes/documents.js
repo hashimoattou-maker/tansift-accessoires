@@ -6,7 +6,7 @@ module.exports = function(db) {
   // POST /api/documents - create any document
   router.post('/', async (req, res) => {
     try {
-      const { type_document, client_id, fournisseur_id, notes, conditions_paiement, adresse_livraison, document_source_id, date_document, lignes } = req.body;
+      const { type_document, client_id, fournisseur_id, notes, conditions_paiement, adresse_livraison, document_source_id, date_document, ref_externe, lignes } = req.body;
       if (!type_document) return res.status(400).json({ error: 'Type de document requis' });
       if (!client_id && ['devis','bon_livraison','facture_client'].includes(type_document)) {
         return res.status(400).json({ error: 'Client requis pour ce type de document' });
@@ -14,8 +14,8 @@ module.exports = function(db) {
 
       const numero = await generateDocumentNumber(db, type_document);
       const dateDoc = date_document || new Date().toISOString().slice(0, 10);
-      const result = await db.prepare(`INSERT INTO documents (type_document, numero, date_document, client_id, fournisseur_id, utilisateur_id, notes, conditions_paiement, adresse_livraison, document_source_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
-        .run(type_document, numero, dateDoc, client_id || null, fournisseur_id || null, req.user?.id || null, notes || null, conditions_paiement || null, adresse_livraison || null, document_source_id || null);
+      const result = await db.prepare(`INSERT INTO documents (type_document, numero, date_document, client_id, fournisseur_id, utilisateur_id, notes, conditions_paiement, adresse_livraison, document_source_id, ref_externe) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(type_document, numero, dateDoc, client_id || null, fournisseur_id || null, req.user?.id || null, notes || null, conditions_paiement || null, adresse_livraison || null, document_source_id || null, ref_externe || null);
 
       const docId = result.lastInsertRowid;
 
@@ -267,9 +267,9 @@ module.exports = function(db) {
       if (!doc) return res.status(404).json({ error: 'Document introuvable' });
       if (doc.statut === 'paye' || doc.statut === 'annule') return res.status(400).json({ error: 'Document payé ou annulé' });
 
-      const { client_id, fournisseur_id, notes, conditions_paiement, adresse_livraison, date_document } = req.body;
-      await db.prepare(`UPDATE documents SET client_id = COALESCE(?, client_id), fournisseur_id = COALESCE(?, fournisseur_id), notes = COALESCE(?, notes), conditions_paiement = COALESCE(?, conditions_paiement), adresse_livraison = COALESCE(?, adresse_livraison), date_document = COALESCE(?, date_document), updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-        .run(client_id !== undefined ? client_id : null, fournisseur_id !== undefined ? fournisseur_id : null, notes !== undefined ? notes : null, conditions_paiement !== undefined ? conditions_paiement : null, adresse_livraison !== undefined ? adresse_livraison : null, date_document || null, doc.id);
+      const { client_id, fournisseur_id, notes, conditions_paiement, adresse_livraison, date_document, ref_externe } = req.body;
+      await db.prepare(`UPDATE documents SET client_id = COALESCE(?, client_id), fournisseur_id = COALESCE(?, fournisseur_id), notes = COALESCE(?, notes), conditions_paiement = COALESCE(?, conditions_paiement), adresse_livraison = COALESCE(?, adresse_livraison), date_document = COALESCE(?, date_document), ref_externe = COALESCE(?, ref_externe), updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+        .run(client_id !== undefined ? client_id : null, fournisseur_id !== undefined ? fournisseur_id : null, notes !== undefined ? notes : null, conditions_paiement !== undefined ? conditions_paiement : null, adresse_livraison !== undefined ? adresse_livraison : null, date_document || null, ref_externe !== undefined ? ref_externe : null, doc.id);
 
       if (doc.client_id && ['facture_client', 'avoir_client'].includes(doc.type_document)) {
         await updateClientSolde(db, doc.client_id);

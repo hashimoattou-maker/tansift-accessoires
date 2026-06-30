@@ -1722,6 +1722,7 @@ function showDocumentForm(type) {
           <div class="form-group"><label>Type document *</label><select name="type_document" class="form-select" id="docTypeSelect" onchange="toggleDocEntity()">${docTypeOptions}</select></div>
           <div class="form-group"><label>${isAchat ? 'Fournisseur' : 'Client'} *</label><select name="entity_id" class="form-select" id="docEntity">${entityOpts}</select></div>
           <div class="form-group"><label>Date</label><input type="date" name="date_document" class="form-control" value="${new Date().toISOString().slice(0, 10)}"></div>
+          ${isAchat ? '<div class="form-group"><label>N° externe</label><input type="text" name="ref_externe" class="form-control" placeholder="N° BL / Facture fournisseur..."></div>' : ''}
         </div>
         <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea"></textarea></div>
         <h4 style="margin:0.5rem 0">Lignes du document</h4>
@@ -1968,6 +1969,7 @@ async function saveDocument(e, type) {
     type_document,
     [isAchat ? 'fournisseur_id' : 'client_id']: parseInt(entity_id),
     date_document: data.get('date_document') || null,
+    ref_externe: data.get('ref_externe') || null,
     notes: data.get('notes'),
     lignes
   };
@@ -1987,7 +1989,8 @@ function editDocument(id) {
       <div class="stat-row"><div class="stat-item"><div class="stat-value">${d.numero}</div><div class="stat-label">Document</div></div>
       <div class="stat-item"><div class="stat-value">${canEdit ? `<input type="date" id="editDocDate" class="form-control" value="${(d.date_document||'').slice(0,10)}" style="width:140px;font-size:0.85rem;text-align:center;padding:0.25rem 0.5rem;border:none;background:transparent;font-weight:600;color:var(--text)">` : formatDate(d.date_document)}</div><div class="stat-label">Date</div></div>
       <div class="stat-item"><div class="stat-value">${d.client_nom || d.fournisseur_nom || '-'}</div><div class="stat-label">Tiers</div></div>
-      <div class="stat-item"><div class="stat-value" style="color:var(--accent)">${formatCurrency(d.net_a_payer)}</div><div class="stat-label">Net à payer</div></div></div>
+      <div class="stat-item"><div class="stat-value" style="color:var(--accent)">${formatCurrency(d.net_a_payer)}</div><div class="stat-label">Net à payer</div></div>
+      ${canEdit ? `<div class="stat-item"><div class="stat-value"><input type="text" id="editDocRefExterne" class="form-control" value="${d.ref_externe || ''}" placeholder="N° externe..." style="width:150px;font-size:0.85rem;text-align:center;padding:0.25rem 0.5rem;border:none;background:transparent;font-weight:600;color:var(--text)"></div><div class="stat-label">N° externe</div></div>` : (d.ref_externe ? `<div class="stat-item"><div class="stat-value">${d.ref_externe}</div><div class="stat-label">N° externe</div></div>` : '')}</div>
       <div class="status-flow" style="margin-top:1rem">
         ${['brouillon','envoye','valide','livre','paye'].map(s => {
           const isDone = ['brouillon','envoye','valide','livre','paye'].indexOf(d.statut) >= ['brouillon','envoye','valide','livre','paye'].indexOf(s);
@@ -2157,9 +2160,11 @@ async function saveEditDocument(docId) {
 
     const notesEl = $('#editDocNotes');
     const dateEl = $('#editDocDate');
+    const refExtEl = $('#editDocRefExterne');
     const updateBody = {};
     if (notesEl) updateBody.notes = notesEl.value;
     if (dateEl) updateBody.date_document = dateEl.value;
+    if (refExtEl) updateBody.ref_externe = refExtEl.value;
     if (Object.keys(updateBody).length) {
       await apiFetch(`/documents/${docId}`, {
         method: 'PUT',

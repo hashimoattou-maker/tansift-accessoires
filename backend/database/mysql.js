@@ -646,6 +646,9 @@ async function createTables() {
       UNIQUE KEY uk_type_jour (type_document, jour)
     )`);
   } catch (e) { /* exists */ }
+
+  // Migration: colonne ref_externe pour numero externe fournisseur
+  try { await pool.query(`ALTER TABLE documents ADD COLUMN ref_externe VARCHAR(255) DEFAULT NULL AFTER adresse_livraison`); } catch (e) { /* exists */ }
 }
 
 async function seedData() {
