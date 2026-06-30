@@ -107,7 +107,12 @@ module.exports = function(db) {
       const { type, client_id, fournisseur_id, statut, search, page = 1, limit = 50 } = req.query;
       let sql = `SELECT d.*, c.raison_sociale as client_nom, f.raison_sociale as fournisseur_nom FROM documents d LEFT JOIN clients c ON d.client_id = c.id LEFT JOIN fournisseurs f ON d.fournisseur_id = f.id WHERE 1=1`;
       const params = [];
-      if (type) { sql += ` AND d.type_document = ?`; params.push(type); }
+      if (type) {
+        const types = type.split(',');
+        const placeholders = types.map(() => '?').join(',');
+        sql += ` AND d.type_document IN (${placeholders})`;
+        params.push(...types);
+      }
       if (client_id) { sql += ` AND d.client_id = ?`; params.push(client_id); }
       if (fournisseur_id) { sql += ` AND d.fournisseur_id = ?`; params.push(fournisseur_id); }
       if (statut) { sql += ` AND d.statut = ?`; params.push(statut); }

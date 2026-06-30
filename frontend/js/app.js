@@ -1678,8 +1678,15 @@ async function loadDocuments(type) {
   const docType = $('#docTypeFilter')?.value || '';
   const statut = $('#docStatutFilter')?.value || '';
   const search = $('#docSearch')?.value || '';
+  const isAchat = type === 'achats';
+  const achatTypes = 'demande_achat,commande_fournisseur,bon_reception,facture_fournisseur,avoir_fournisseur';
+  const venteTypes = 'devis,bon_commande_client,bon_livraison,facture_client,avoir_client';
   let url = `/documents?limit=50&search=${encodeURIComponent(search)}`;
-  if (docType) url += `&type=${docType}`;
+  if (docType) {
+    url += `&type=${docType}`;
+  } else {
+    url += `&type=${isAchat ? achatTypes : venteTypes}`;
+  }
   if (statut) url += `&statut=${statut}`;
 
   try {
