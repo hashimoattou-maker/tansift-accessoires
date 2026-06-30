@@ -44,7 +44,7 @@ function showToast(msg, type = 'info', duration = 3000) {
 function formatDate(d) {
   if (!d) return '';
   const date = new Date(d);
-  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function formatCurrency(n) {
