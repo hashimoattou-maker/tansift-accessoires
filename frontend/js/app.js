@@ -1993,7 +1993,7 @@ async function saveDocument(e, type) {
 
 function editDocument(id) {
   apiFetch(`/documents/${id}`).then(d => {
-    const canEdit = d.statut !== 'paye' && d.statut !== 'annule';
+    const canEdit = true;
     let htmlContent = html`
       <div class="stat-row"><div class="stat-item"><div class="stat-value">${d.numero}</div><div class="stat-label">Document</div></div>
       <div class="stat-item"><div class="stat-value">${canEdit ? `<input type="date" id="editDocDate" class="form-control" value="${(d.date_document||'').slice(0,10)}" style="width:140px;font-size:0.85rem;text-align:center;padding:0.25rem 0.5rem;border:none;background:transparent;font-weight:600;color:var(--text)">` : formatDate(d.date_document)}</div><div class="stat-label">Date</div></div>

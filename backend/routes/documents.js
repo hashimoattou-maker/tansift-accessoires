@@ -212,7 +212,6 @@ module.exports = function(db) {
     try {
       const doc = await db.prepare(`SELECT * FROM documents WHERE id = ?`).get(req.params.id);
       if (!doc) return res.status(404).json({ error: 'Document introuvable' });
-      if (doc.statut === 'paye' || doc.statut === 'annule') return res.status(400).json({ error: 'Document payé ou annulé' });
 
       const ligne = await db.prepare(`SELECT * FROM documents_lignes WHERE id = ? AND document_id = ?`).get(req.params.ligneId, req.params.id);
       if (!ligne) return res.status(404).json({ error: 'Ligne introuvable' });
@@ -270,7 +269,6 @@ module.exports = function(db) {
     try {
       const doc = await db.prepare(`SELECT * FROM documents WHERE id = ?`).get(req.params.id);
       if (!doc) return res.status(404).json({ error: 'Document introuvable' });
-      if (doc.statut === 'paye' || doc.statut === 'annule') return res.status(400).json({ error: 'Document payé ou annulé' });
 
       const { client_id, fournisseur_id, notes, conditions_paiement, adresse_livraison, date_document, ref_externe } = req.body;
       await db.prepare(`UPDATE documents SET client_id = COALESCE(?, client_id), fournisseur_id = COALESCE(?, fournisseur_id), notes = COALESCE(?, notes), conditions_paiement = COALESCE(?, conditions_paiement), adresse_livraison = COALESCE(?, adresse_livraison), date_document = COALESCE(?, date_document), ref_externe = COALESCE(?, ref_externe), updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
