@@ -230,9 +230,9 @@ async function renderArticles(page) {
   page.innerHTML = html`
     <div class="page-title">Articles & Stock <button class="btn btn-primary" onclick="showArticleForm()">+ Nouvel article</button></div>
     <div class="filters-bar">
-      <div style="position:relative;display:inline-flex;align-items:center">
-        <input type="text" id="artSearch" class="form-control" placeholder="Référence, désignation..." style="width:200px;padding-right:30px" onkeydown="if(event.key==='Enter'){loadArticles();event.preventDefault()}" oninput="loadArticles()">
-        <button type="button" onclick="loadArticles()" style="position:absolute;right:4px;background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-light)">🔍</button>
+      <div style="display:inline-flex;align-items:stretch;gap:0">
+        <input type="text" id="artSearch" class="form-control" placeholder="Référence, désignation..." style="width:200px;border-radius:var(--radius) 0 0 var(--radius)" onkeydown="if(event.key==='Enter'){event.preventDefault()}" oninput="loadArticles()">
+        <button type="button" class="btn btn-secondary" style="border-radius:0 var(--radius) var(--radius) 0;border-left:0" onclick="loadArticles()">🔍</button>
       </div>
       <select id="artCategorie" class="form-select" style="width:150px" onchange="loadArticles()"><option value="">Toutes catégories</option></select>
       <select id="artFilter" class="form-select" style="width:150px" onchange="loadArticles()">
