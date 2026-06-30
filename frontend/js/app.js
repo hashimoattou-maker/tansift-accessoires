@@ -2042,7 +2042,7 @@ function editLigneRow(l, canEdit) {
   return html`<tr><td>${l.reference || l.art_reference || '-'}</td><td>${l.designation || l.art_designation || '-'}</td><td>${l.source_unit_designation ? `<span class="badge badge-info">${l.source_unit_designation}</span>` : '-'}</td><td>${formatNumber(l.quantite)}</td><td>${formatCurrency(l.prix_unitaire_ht)}</td><td>${l.taux_tva}%</td><td><strong>${formatCurrency(l.montant_ht)}</strong></td></tr>`;
 }
 
-function recalcEditDoc() {
+window.recalcEditDoc = function() {
   const rows = $$('#editDocLignes tr[data-ligne-id]');
   let totalHT = 0, totalTVA = 0;
   rows.forEach(r => {
@@ -2086,11 +2086,9 @@ window.addEditDocLigne = async function(docId) {
     <td class="edit-ht">0,00 MAD</td>
     <td><button class="btn btn-sm btn-danger" onclick="removeEditLigne(this, null)">✕</button></td>`;
   tbody.appendChild(tr);
-  window.searchEditArticle = searchEditArticle;
-  window.selectEditArticle = selectEditArticle;
 };
 
-function searchEditArticle(input) {
+window.searchEditArticle = function(input) {
   clearTimeout(input._searchTimeout);
   const val = input.value.trim();
   const wrap = input.closest('td');
