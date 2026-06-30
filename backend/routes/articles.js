@@ -11,7 +11,10 @@ module.exports = function(db) {
                  FROM articles a LEFT JOIN categories c ON a.categorie_id = c.id LEFT JOIN taux_tva t ON a.tva_id = t.id WHERE 1=1`;
       const params = [];
 
-      if (search) { sql += ` AND (a.reference LIKE ? OR a.designation LIKE ? OR a.code_barre LIKE ?)`; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+      if (search) {
+        sql += ` AND (a.reference LIKE ? OR a.designation LIKE ? OR a.code_barre LIKE ?)`;
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
       if (categorie_id) { sql += ` AND a.categorie_id = ?`; params.push(categorie_id); }
       if (type) { sql += ` AND a.type_article = ?`; params.push(type); }
       if (actif !== undefined) { sql += ` AND a.actif = ?`; params.push(actif); }
@@ -19,7 +22,19 @@ module.exports = function(db) {
 
       const offset = (parseInt(page) - 1) * parseInt(limit);
       const total = await db.prepare(`SELECT COUNT(*) as total FROM (${sql}) AS _sub`).get(...params);
-      sql += ` ORDER BY a.reference LIMIT ? OFFSET ?`;
+
+      if (search) {
+        const s = search.replace(/'/g, "''");
+        sql += ` ORDER BY CASE
+          WHEN a.reference LIKE '${s}%' THEN 0
+          WHEN a.designation LIKE '${s}%' THEN 1
+          WHEN a.reference LIKE '%${s}%' THEN 2
+          WHEN a.designation LIKE '%${s}%' THEN 3
+          ELSE 4 END, a.reference`;
+      } else {
+        sql += ` ORDER BY a.reference`;
+      }
+      sql += ` LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
 
       const articles = await db.prepare(sql).all(...params);
