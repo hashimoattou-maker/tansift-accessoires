@@ -297,8 +297,11 @@ module.exports = function(db) {
       const validTypes = ['moteur', 'masque', 'accessoire', 'capo', 'parechoc', 'ailes', 'portes', 'mala', 'dynamo', 'demareurs', 'radiateur', 'parabole', 'feu_rouge', 'autre'];
       if (!validTypes.includes(type_unite)) return res.status(400).json({ error: `Type invalide. Valides: ${validTypes.join(', ')}` });
 
-      await db.prepare(`UPDATE articles SET type_unite = ?, est_moteur = 1, stock_unite = ? WHERE id = ?`).run(type_unite, stock_unite || 0, req.params.id);
-      await auditLog(db, req.user?.id, 'MODIFICATION', 'article', req.params.id, { type_unite, stock_unite });
+      const article = await db.prepare(`SELECT stock_actuel FROM articles WHERE id = ?`).get(req.params.id);
+      const finalStock = stock_unite !== undefined ? stock_unite : (article?.stock_actuel || 0);
+
+      await db.prepare(`UPDATE articles SET type_unite = ?, est_moteur = 1, stock_unite = ? WHERE id = ?`).run(type_unite, finalStock, req.params.id);
+      await auditLog(db, req.user?.id, 'MODIFICATION', 'article', req.params.id, { type_unite, stock_unite: finalStock });
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: e.message });

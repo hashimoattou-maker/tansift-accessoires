@@ -652,6 +652,11 @@ async function createTables() {
 
   // Migration: colonne ref_externe pour numero externe fournisseur
   try { await pool.query(`ALTER TABLE documents ADD COLUMN ref_externe VARCHAR(255) DEFAULT NULL AFTER adresse_livraison`); } catch (e) { /* exists */ }
+
+  // Migration: synchroniser stock_unite avec stock_actuel pour les unités à stock 0
+  try {
+    await pool.query(`UPDATE articles SET stock_unite = stock_actuel WHERE (est_moteur = 1 OR type_unite IS NOT NULL) AND stock_unite = 0 AND stock_actuel > 0`);
+  } catch (e) { /* exists */ }
 }
 
 async function seedData() {
