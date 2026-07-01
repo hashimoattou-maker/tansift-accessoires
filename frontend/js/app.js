@@ -2286,11 +2286,11 @@ function printDocument(id) {
         </style>
         <div class="header">
           <div class="header-left">${societe.logo ? `<img src="${societe.logo}" class="logo-img">` : ''}<div><div class="soc-name">${societe.nom}</div><div class="soc-slogan">${societe.slogan}</div><div class="doc-badge">${typeLabel}</div><div class="doc-ref">N° ${d.numero}</div></div></div>
-          <div style="text-align:right;font-size:11px"><div>Date: ${dateDoc}</div>${societe.ice ? `<div>ICE: ${societe.ice}</div>` : ''}</div>
+          <div style="text-align:right;font-size:11px">${societe.ice ? `<div>ICE: ${societe.ice}</div>` : ''}</div>
         </div>
         <div class="info-grid">${clientHtml || fournisseurHtml}<div class="info-card"><h4>DOCUMENT</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: ${d.statut}</p></div></div>
         <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
-        <div class="footer"><div>${societe.nom} ${societe.telephone ? '- ' + societe.telephone : ''}${societe.email ? ' | ' + societe.email : ''}</div><div>${societe.mentions || 'Document généré le ' + new Date().toLocaleString('fr-FR')}</div></div>
+        <div class="footer"><div>${societe.nom} ${societe.telephone ? '- ' + societe.telephone : ''}${societe.email ? ' | ' + societe.email : ''}</div><div></div></div>
       `,
 
       // ========== MODERNE ==========
@@ -2324,7 +2324,7 @@ function printDocument(id) {
           <div class="doc-header"><span class="type">${typeLabel}</span><span class="ref">N° ${d.numero} | ${dateDoc}</span></div>
           <div class="info-grid">${clientHtml || fournisseurHtml}<div class="info-card"><h4>Détails</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: <strong>${d.statut}</strong></p></div></div>
           <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
-          <div class="footer">${societe.nom} — ${societe.telephone}${societe.email ? ' | ' + societe.email : ''}${societe.ice ? ' | ICE: ' + societe.ice : ''}<br>${societe.mentions || 'Document généré le ' + new Date().toLocaleString('fr-FR')}</div>
+          <div class="footer">${societe.nom} — ${societe.telephone}${societe.email ? ' | ' + societe.email : ''}${societe.ice ? ' | ICE: ' + societe.ice : ''}</div>
         </div>
       `,
 
@@ -2350,7 +2350,7 @@ function printDocument(id) {
         <div class="doc-ref">${typeLabel} N° ${d.numero} — ${dateDoc}</div>
         <div class="info-grid"><div>${clientHtml || fournisseurHtml || ''}</div><div style="text-align:right">${societe.ice ? 'ICE: ' + societe.ice + '<br>' : ''}${societe.telephone ? 'Tel: ' + societe.telephone + '<br>' : ''}${societe.email ? 'Email: ' + societe.email + '<br>' : ''}</div></div>
         <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
-        <div class="footer">${societe.mentions || 'Document généré le ' + new Date().toLocaleString('fr-FR')} — ${societe.nom}</div>
+        <div class="footer">${societe.nom}</div>
       `,
 
       // ========== PROFESSIONNEL ==========
