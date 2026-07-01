@@ -772,6 +772,7 @@ window.showMarquerUnite = async function() {
         <option value="parabole">Parabole</option><option value="feu_rouge">Feu rouge</option>
         <option value="autre">Autre</option>
       </select></div>
+      <div class="form-group"><label>Stock unité</label><input type="number" id="marquerStockUnite" class="form-control" value="0" min="0"></div>
     `, html`
       <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmMarquerUnite()">Marquer</button>
@@ -798,26 +799,30 @@ window.searchMarquerArticle = function(input) {
   }
 
   results.innerHTML = filtered.map(a =>
-    `<div class="autocomplete-item" onclick="selectMarquerArticle(this, ${a.id}, '${(a.reference||'').replace(/'/g,"\\'")}', '${(a.designation||'').replace(/'/g,"\\'")}')">
+    `<div class="autocomplete-item" onclick="selectMarquerArticle(this, ${a.id}, '${(a.reference||'').replace(/'/g,"\\'")}', '${(a.designation||'').replace(/'/g,"\\'")}', ${a.stock_actuel||0})">
       <div><span class="ref">${a.reference}</span> — ${a.designation}</div>
+      <div><span class="stock-info">Stock: ${formatNumber(a.stock_actuel||0)}</span></div>
     </div>`
   ).join('');
   results.classList.add('show');
 };
 
-window.selectMarquerArticle = function(el, id, ref, des) {
+window.selectMarquerArticle = function(el, id, ref, des, stock) {
   const input = el.closest('.autocomplete-wrap').querySelector('input');
   input.value = ref + ' — ' + des;
   window._marquerSelectedId = id;
   el.closest('.autocomplete-results').classList.remove('show');
+  const stockInput = $('#marquerStockUnite');
+  if (stockInput) stockInput.value = stock || 0;
 };
 
 window.confirmMarquerUnite = async function() {
   const articleId = window._marquerSelectedId || parseInt($('#marquerArticleSearch')?.value);
   const typeUnite = $('#marquerTypeUnite').value;
+  const stockUnite = parseFloat($('#marquerStockUnite')?.value) || 0;
   if (!articleId) { showToast('Sélectionnez un article', 'error'); return; }
   try {
-    await apiFetch(`/unites/${articleId}/marquer-unite`, { method: 'PUT', body: JSON.stringify({ type_unite: typeUnite }) });
+    await apiFetch(`/unites/${articleId}/marquer-unite`, { method: 'PUT', body: JSON.stringify({ type_unite: typeUnite, stock_unite: stockUnite }) });
     showToast('Article marqué comme unité assemblable', 'success');
     closeModal();
     loadUnites();

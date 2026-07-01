@@ -271,12 +271,12 @@ module.exports = function(db) {
   // ============================================================
   router.put('/:id/marquer-unite', async (req, res) => {
     try {
-      const { type_unite } = req.body;
-      const validTypes = ['moteur', 'masque', 'boite', 'pont', 'train_avant', 'train_arriere', 'autre'];
+      const { type_unite, stock_unite } = req.body;
+      const validTypes = ['moteur', 'masque', 'accessoire', 'capo', 'parechoc', 'ailes', 'portes', 'mala', 'dynamo', 'demareurs', 'radiateur', 'parabole', 'feu_rouge', 'autre'];
       if (!validTypes.includes(type_unite)) return res.status(400).json({ error: `Type invalide. Valides: ${validTypes.join(', ')}` });
 
-      await db.prepare(`UPDATE articles SET type_unite = ?, est_moteur = 1 WHERE id = ?`).run(type_unite, req.params.id);
-      await auditLog(db, req.user?.id, 'MODIFICATION', 'article', req.params.id, { type_unite });
+      await db.prepare(`UPDATE articles SET type_unite = ?, est_moteur = 1, stock_unite = ? WHERE id = ?`).run(type_unite, stock_unite || 0, req.params.id);
+      await auditLog(db, req.user?.id, 'MODIFICATION', 'article', req.params.id, { type_unite, stock_unite });
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: e.message });
