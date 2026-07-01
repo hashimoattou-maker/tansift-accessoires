@@ -636,6 +636,9 @@ async function createTables() {
   // Migration: catégorie Accessoires
   try { await pool.query(`INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)`, ['ACC', 'Accessoires', 20, 365]); } catch (e) { /* exists */ }
 
+  // Migration: catégorie Masque
+  try { await pool.query(`INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)`, ['MASQ', 'Masque', 20, 365]); } catch (e) { /* exists */ }
+
   // Migration: table doc_counters pour numérotation chronologique
   try {
     await pool.query(`CREATE TABLE IF NOT EXISTS doc_counters (
@@ -697,7 +700,8 @@ async function seedData() {
     ['ELEC', 'Électricité', 20, 365], ['CARRO', 'Carrosserie', 20, 365],
     ['MOTEUR', 'Moteurs', 20, 730],
     ['ASSEM', 'Assemblage', 20, 365],
-    ['ACC', 'Accessoires', 20, 365]
+    ['ACC', 'Accessoires', 20, 365],
+    ['MASQ', 'Masque', 20, 365]
   ];
   for (const [code, nom, tva, garantie] of categories) {
     await pool.query('INSERT IGNORE INTO categories (code, nom, taux_tva, garantie_jours) VALUES (?,?,?,?)', [code, nom, tva, garantie]);
