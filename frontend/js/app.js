@@ -690,8 +690,11 @@ function renderUnites(page) {
       <input type="text" id="uniteSearch" class="form-control" placeholder="Référence, désignation..." style="width:250px" oninput="loadUnites()">
       <select id="uniteTypeFilter" class="form-select" style="width:180px" onchange="loadUnites()">
         <option value="">Tous types</option>
-        <option value="moteur">Moteur</option><option value="masque">Masque</option><option value="boite">Boîte</option>
-        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option><option value="portes">Portes</option>
+        <option value="moteur">Moteur</option><option value="masque">Masque</option>
+        <option value="accessoire">Accessoire</option><option value="capo">Capo</option><option value="parechoc">Parechoc</option>
+        <option value="ailes">Ailes</option><option value="portes">Portes</option><option value="mala">Mala</option>
+        <option value="dynamo">Dynamo</option><option value="demareurs">Demareurs</option><option value="radiateur">Radiateur</option>
+        <option value="parabole">Parabole</option><option value="feu_rouge">Feu rouge</option>
         <option value="autre">Autre</option>
       </select>
     </div>
@@ -713,8 +716,8 @@ async function loadUnites() {
     if (type) url += `type=${type}&`;
     if (search) url += `search=${encodeURIComponent(search)}`;
     const units = await apiFetch(url);
-    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', portes: 'Portes', autre: 'Autre' };
-    const typeBadge = { moteur: 'badge-danger', masque: 'badge-info', boite: 'badge-warning', pont: 'badge-info', train_avant: 'badge-info', train_arriere: 'badge-info', portes: 'badge-info', autre: 'badge-neutral' };
+    const typeLabels = { moteur: 'Moteur', masque: 'Masque', accessoire: 'Accessoire', capo: 'Capo', parechoc: 'Parechoc', ailes: 'Ailes', portes: 'Portes', mala: 'Mala', dynamo: 'Dynamo', demareurs: 'Demareurs', radiateur: 'Radiateur', parabole: 'Parabole', feu_rouge: 'Feu rouge', autre: 'Autre' };
+    const typeBadge = { moteur: 'badge-danger', masque: 'badge-info', accessoire: 'badge-info', capo: 'badge-info', parechoc: 'badge-info', ailes: 'badge-info', portes: 'badge-info', mala: 'badge-info', dynamo: 'badge-info', demareurs: 'badge-info', radiateur: 'badge-info', parabole: 'badge-info', feu_rouge: 'badge-info', autre: 'badge-neutral' };
     const etatClasses = { complet: 'badge-success', partiel: 'badge-warning', manquant: 'badge-danger', non_defini: 'badge-info' };
     const etatLabels = { complet: 'Complet', partiel: 'Partiel', manquant: 'Manquant', non_defini: 'Non défini' };
     container.innerHTML = units.length ? units.map(u => html`<div class="card" style="padding:0">
@@ -762,8 +765,11 @@ window.showMarquerUnite = async function() {
         </div>
       </div>
       <div class="form-group"><label>Type d'unité</label><select id="marquerTypeUnite" class="form-select">
-        <option value="moteur">Moteur</option><option value="masque">Masque</option><option value="boite">Boîte de vitesses</option>
-        <option value="pont">Pont</option><option value="train_avant">Train avant</option><option value="train_arriere">Train arrière</option><option value="portes">Portes</option>
+        <option value="moteur">Moteur</option><option value="masque">Masque</option>
+        <option value="accessoire">Accessoire</option><option value="capo">Capo</option><option value="parechoc">Parechoc</option>
+        <option value="ailes">Ailes</option><option value="portes">Portes</option><option value="mala">Mala</option>
+        <option value="dynamo">Dynamo</option><option value="demareurs">Demareurs</option><option value="radiateur">Radiateur</option>
+        <option value="parabole">Parabole</option><option value="feu_rouge">Feu rouge</option>
         <option value="autre">Autre</option>
       </select></div>
     `, html`
@@ -822,7 +828,7 @@ window.showUniteDetail = async function(id) {
   try {
     const data = await apiFetch(`/unites/${id}`);
     const { unite: u, nomenclature, assemblages, decompositions, ventes, mouvements } = data;
-    const typeLabels = { moteur: 'Moteur', masque: 'Masque', boite: 'Boîte', pont: 'Pont', train_avant: 'Train avant', train_arriere: 'Train arrière', portes: 'Portes', autre: 'Autre' };
+    const typeLabels = { moteur: 'Moteur', masque: 'Masque', accessoire: 'Accessoire', capo: 'Capo', parechoc: 'Parechoc', ailes: 'Ailes', portes: 'Portes', mala: 'Mala', dynamo: 'Dynamo', demareurs: 'Demareurs', radiateur: 'Radiateur', parabole: 'Parabole', feu_rouge: 'Feu rouge', autre: 'Autre' };
 
     let htmlContent = html`
       <div class="stat-row" style="margin-bottom:1rem">
