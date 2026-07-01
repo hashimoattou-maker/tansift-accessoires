@@ -22,7 +22,9 @@ async function apiFetch(url, options = {}) {
   try {
     const res = await fetch(`${API}${url}`, { ...options, headers });
     if (res.status === 401 || res.status === 403) { logout(); return null; }
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error('Erreur serveur (réponse non JSON)'); }
     if (!res.ok) throw new Error(data.error || 'Erreur serveur');
     return data;
   } catch (e) {

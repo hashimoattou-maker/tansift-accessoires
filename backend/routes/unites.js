@@ -36,6 +36,28 @@ module.exports = function(db) {
   });
 
   // ============================================================
+  // TYPES d'unités disponibles
+  // ============================================================
+  router.get('/meta/types', async (req, res) => {
+    res.json([
+      { value: 'moteur', label: 'Moteur' },
+      { value: 'masque', label: 'Masque' },
+      { value: 'accessoire', label: 'Accessoire' },
+      { value: 'capo', label: 'Capo' },
+      { value: 'parechoc', label: 'Parechoc' },
+      { value: 'ailes', label: 'Ailes' },
+      { value: 'portes', label: 'Portes' },
+      { value: 'mala', label: 'Mala' },
+      { value: 'dynamo', label: 'Dynamo' },
+      { value: 'demareurs', label: 'Demareurs' },
+      { value: 'radiateur', label: 'Radiateur' },
+      { value: 'parabole', label: 'Parabole' },
+      { value: 'feu_rouge', label: 'Feu rouge' },
+      { value: 'autre', label: 'Autre' }
+    ]);
+  });
+
+  // ============================================================
   // DETAIL d'une unité (nomenclature, assemblages, démontages, ventes)
   // ============================================================
   router.get('/:id', async (req, res) => {
@@ -297,21 +319,6 @@ module.exports = function(db) {
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
-  });
-
-  // ============================================================
-  // TYPES d'unités disponibles
-  // ============================================================
-  router.get('/meta/types', async (req, res) => {
-    res.json([
-      { value: 'moteur', label: 'Moteur' },
-      { value: 'masque', label: 'Masque' },
-      { value: 'boite', label: 'Boîte de vitesses' },
-      { value: 'pont', label: 'Pont' },
-      { value: 'train_avant', label: 'Train avant' },
-      { value: 'train_arriere', label: 'Train arrière' },
-      { value: 'autre', label: 'Autre' }
-    ]);
   });
 
   return router;
