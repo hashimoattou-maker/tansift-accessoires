@@ -1749,7 +1749,7 @@ function showDocumentForm(type) {
         <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea"></textarea></div>
         <h4 style="margin:0.5rem 0">Lignes du document</h4>
         <div id="docLignes">
-          <div class="doc-ligne" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:end">
+          <div class="doc-ligne" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:end">
             <div class="form-group"><label>Article</label><div class="autocomplete-wrap">
               <input type="text" class="form-control autocomplete-input" placeholder="Tapez nom/réf/code-barres..." autocomplete="off"
                 oninput="searchDocArticle(this)" onfocus="searchDocArticle(this)"
@@ -1760,7 +1760,8 @@ function showDocumentForm(type) {
             </div></div>
             <div class="form-group"><label>Unité source</label><select class="form-select source-unit-select"><option value="">—</option></select></div>
             <div class="form-group"><label>Qté</label><input type="number" class="form-control qte-input" value="1" min="1" oninput="calcDocLigne(this)"></div>
-            <div class="form-group"><label>PU HT</label><input type="number" step="0.01" class="form-control prix-input" value="0" oninput="calcDocLigne(this)"></div>
+            <div class="form-group"><label>PU HT</label><input type="number" step="0.01" class="form-control prix-input" value="0" oninput="calcFromHT(this)"></div>
+            <div class="form-group"><label>PU TTC</label><input type="number" step="0.01" class="form-control prix-ttc-input" value="" placeholder="TTC" oninput="calcFromTTC(this)"></div>
             <div class="form-group"><label>HT</label><input type="text" class="form-control ht-aff" readonly style="background:var(--bg-card)"></div>
             <div class="form-group"><label>TVA</label><input type="text" class="form-control tva-aff" readonly style="background:var(--bg-card)"></div>
             <button type="button" class="btn btn-sm btn-danger" style="margin-bottom:0.5rem" onclick="removeLigne(this)">✕</button>
@@ -1795,6 +1796,30 @@ function calcDocLigne(el) {
   tvaAff.value = formatCurrency(tva * qte) + ' MAD';
   updateDocTotal();
 }
+
+window.calcFromHT = function(el) {
+  const ligne = el?.closest('.doc-ligne');
+  if (!ligne) return;
+  const prixInput = ligne.querySelector('.prix-input');
+  const prixTtcInput = ligne.querySelector('.prix-ttc-input');
+  const taux = parseFloat(prixInput?.dataset?.tauxTva) || 20;
+  const ht = parseFloat(prixInput.value) || 0;
+  if (prixTtcInput && ht > 0) prixTtcInput.value = (ht * (1 + taux / 100)).toFixed(2);
+  calcDocLigne(el);
+};
+
+window.calcFromTTC = function(el) {
+  const ligne = el?.closest('.doc-ligne');
+  if (!ligne) return;
+  const prixInput = ligne.querySelector('.prix-input');
+  const prixTtcInput = ligne.querySelector('.prix-ttc-input');
+  const taux = parseFloat(prixInput?.dataset?.tauxTva) || 20;
+  const ttc = parseFloat(prixTtcInput?.value) || 0;
+  if (prixInput && ttc > 0) {
+    prixInput.value = (ttc / (1 + taux / 100)).toFixed(2);
+  }
+  calcDocLigne(el);
+};
 
 function updateDocTotal() {
   const lignes = $$('.doc-ligne');
@@ -1835,7 +1860,9 @@ window.addDocLigne = function(type) {
   const qteInput = clone.querySelector('.qte-input');
   if (qteInput) qteInput.oninput = function() { calcDocLigne(this); };
   const prixInput = clone.querySelector('.prix-input');
-  if (prixInput) { prixInput.oninput = function() { calcDocLigne(this); }; prixInput.dataset.tauxTva = '20'; }
+  if (prixInput) { prixInput.oninput = function() { calcFromHT(this); }; prixInput.dataset.tauxTva = '20'; }
+  const prixTtcInput = clone.querySelector('.prix-ttc-input');
+  if (prixTtcInput) { prixTtcInput.oninput = function() { calcFromTTC(this); }; }
 
   container.appendChild(clone);
   updateDocTotal();
@@ -1939,11 +1966,16 @@ function scanDocBarcode(btn) {
       input.value = article.reference + ' - ' + article.designation;
       input.dataset.articleId = article.id;
       const prixInput = ligne?.querySelector('.prix-input');
+      const prixTtcInput = ligne?.querySelector('.prix-ttc-input');
       if (prixInput) {
         const taux = article.taux_tva_value || 20;
-        const ttc = (article.prix_vente_ht || 0) * (1 + taux / 100);
-        prixInput.value = ttc.toFixed(2);
+        prixInput.value = (article.prix_vente_ht || 0).toFixed(2);
         prixInput.dataset.tauxTva = taux;
+        if (prixTtcInput) {
+          const ttc = (article.prix_vente_ht || 0) * (1 + taux / 100);
+          prixTtcInput.value = ttc.toFixed(2);
+          prixTtcInput.dataset.tauxTva = taux;
+        }
         calcDocLigne(prixInput);
       }
       showToast('Article trouvé: ' + article.reference, 'success');
@@ -2021,7 +2053,7 @@ function editDocument(id) {
         }).join('')}
       </div>
       <h4 style="margin:1rem 0 0.5rem">Lignes</h4>
-      <table id="editDocTable"><thead><tr><th>Réf.</th><th>Désignation</th><th>Unité source</th>${canEdit ? '<th>Qté</th><th>PU HT</th><th>TVA %</th>' : '<th>Qté</th><th>PU HT</th><th>TVA</th>'}<th>Total HT</th>${canEdit ? '<th></th>' : ''}</tr></thead>
+      <table id="editDocTable"><thead><tr><th>Réf.</th><th>Désignation</th><th>Unité source</th>${canEdit ? '<th>Qté</th><th>PU HT</th><th>PU TTC</th><th>TVA %</th>' : '<th>Qté</th><th>PU HT</th><th>TVA</th>'}<th>Total HT</th>${canEdit ? '<th></th>' : ''}</tr></thead>
       <tbody id="editDocLignes">${d.lignes?.length ? d.lignes.map(l => editLigneRow(l, canEdit)).join('') : '<tr><td colspan="8">Aucune ligne</td></tr>'}</tbody>
       <tfoot id="editDocFoot"><tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right;font-weight:600">Total HT:</td><td id="editTotalHT">${formatCurrency(d.montant_ht)}</td>${canEdit ? '<td></td>' : ''}</tr>
       <tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right">TVA:</td><td id="editTotalTVA">${formatCurrency(d.total_tva)}</td>${canEdit ? '<td></td>' : ''}</tr>
@@ -2041,13 +2073,16 @@ function editDocument(id) {
 
 function editLigneRow(l, canEdit) {
   if (canEdit) {
+    const taux = l.taux_tva || 20;
+    const ttcVal = ((l.prix_unitaire_ht || 0) * (1 + taux / 100)).toFixed(2);
     return html`<tr data-ligne-id="${l.id}">
       <td>${l.reference || l.art_reference || '-'}</td>
       <td>${l.designation || l.art_designation || '-'}</td>
       <td>${l.source_unit_designation ? `<span class="badge badge-info">${l.source_unit_designation}</span>` : '-'}</td>
       <td><input type="number" class="form-control edit-qte" value="${l.quantite}" min="1" style="width:60px" oninput="recalcEditDoc()"></td>
-      <td><input type="number" class="form-control edit-prix" value="${l.prix_unitaire_ht}" step="0.01" style="width:90px" oninput="recalcEditDoc()" data-taux-tva="${l.taux_tva || 20}"></td>
-      <td><input type="number" class="form-control edit-tva" value="${l.taux_tva || 20}" step="0.1" style="width:60px" oninput="recalcEditDoc()"></td>
+      <td><input type="number" class="form-control edit-prix" value="${l.prix_unitaire_ht}" step="0.01" style="width:90px" oninput="recalcEditTTC(this)" data-taux-tva="${taux}"></td>
+      <td><input type="number" class="form-control edit-prix-ttc" value="${ttcVal}" step="0.01" style="width:90px" oninput="recalcEditFromTTC(this)" data-taux-tva="${taux}"></td>
+      <td><input type="number" class="form-control edit-tva" value="${taux}" step="0.1" style="width:60px" oninput="recalcEditDoc()"></td>
       <td class="edit-ht">${formatCurrency(l.montant_ht)}</td>
       <td><button class="btn btn-sm btn-danger" onclick="removeEditLigne(this, ${l.id})">✕</button></td>
     </tr>`;
@@ -2074,6 +2109,30 @@ window.recalcEditDoc = function() {
   const n = $('#editTotalTTC'); if (n) n.textContent = formatCurrency(totalHT + totalTVA);
 }
 
+window.recalcEditTTC = function(el) {
+  const tr = el?.closest('tr');
+  if (!tr) return;
+  const prix = tr.querySelector('.edit-prix');
+  const prixTtc = tr.querySelector('.edit-prix-ttc');
+  const taux = parseFloat(prix?.dataset?.tauxTva) || 20;
+  const ht = parseFloat(prix.value) || 0;
+  if (prixTtc && ht > 0) prixTtc.value = (ht * (1 + taux / 100)).toFixed(2);
+  recalcEditDoc();
+};
+
+window.recalcEditFromTTC = function(el) {
+  const tr = el?.closest('tr');
+  if (!tr) return;
+  const prix = tr.querySelector('.edit-prix');
+  const prixTtc = tr.querySelector('.edit-prix-ttc');
+  const taux = parseFloat(prixTtc?.dataset?.tauxTva) || 20;
+  const ttc = parseFloat(prixTtc.value) || 0;
+  if (prix && ttc > 0) {
+    prix.value = (ttc / (1 + taux / 100)).toFixed(2);
+  }
+  recalcEditDoc();
+};
+
 window.removeEditLigne = async function(btn, ligneId) {
   const tr = btn.closest('tr');
   if (ligneId && !String(ligneId).startsWith('new_')) {
@@ -2094,7 +2153,8 @@ window.addEditDocLigne = async function(docId) {
     <td class="edit-des-cell">-</td>
     <td>-</td>
     <td><input type="number" class="form-control edit-qte" value="1" min="1" style="width:60px" oninput="recalcEditDoc()"></td>
-    <td><input type="number" class="form-control edit-prix" value="0" step="0.01" style="width:90px" oninput="recalcEditDoc()" data-taux-tva="20" data-article-id=""></td>
+    <td><input type="number" class="form-control edit-prix" value="0" step="0.01" style="width:90px" oninput="recalcEditTTC(this)" data-taux-tva="20" data-article-id=""></td>
+    <td><input type="number" class="form-control edit-prix-ttc" value="" step="0.01" style="width:90px" placeholder="TTC" oninput="recalcEditFromTTC(this)" data-taux-tva="20"></td>
     <td><input type="number" class="form-control edit-tva" value="20" step="0.1" style="width:60px" oninput="recalcEditDoc()"></td>
     <td class="edit-ht">0,00 MAD</td>
     <td><button class="btn btn-sm btn-danger" onclick="removeEditLigne(this, null)">✕</button></td>`;
@@ -2136,6 +2196,8 @@ window.selectEditArticle = function(el, id, ref, des, pv, taux) {
   if (refInput) refInput.value = ref;
   const prixInput = tr.querySelector('.edit-prix');
   if (prixInput) { prixInput.value = pv; prixInput.dataset.tauxTva = taux; prixInput.dataset.articleId = id; }
+  const prixTtcInput = tr.querySelector('.edit-prix-ttc');
+  if (prixTtcInput) { prixTtcInput.value = (pv * (1 + taux / 100)).toFixed(2); prixTtcInput.dataset.tauxTva = taux; }
   const tvaInput = tr.querySelector('.edit-tva');
   if (tvaInput) tvaInput.value = taux;
   recalcEditDoc();
@@ -3070,7 +3132,7 @@ async function loadNotifications() {
   'showPaiementForm','loadSituation','exportSoldes','savePaiement',
   'showFournisseurForm','editFournisseur','showFournisseurDetail','loadFournisseurs','saveFournisseur',
   'showDocumentForm','editDocument','printDocument','changeDocStatut','supprimerDocument','loadDocuments','saveDocument',
-  'saveEditDocument','addEditDocLigne','removeEditLigne','recalcEditDoc','searchEditArticle','selectEditArticle',
+  'saveEditDocument','addEditDocLigne','removeEditLigne','recalcEditDoc','recalcEditTTC','recalcEditFromTTC','searchEditArticle','selectEditArticle',
   'addDocLigne','removeLigne','searchDocArticle','selectDocArticle','scanDocBarcode',
   'scanBarcode','generateLabel','previewLabel','printBulkLabels','transfertDocument',
   'generateReport','exportZip','saveSociete','saveConfiguration','saveUser','editUser','showUserForm','switchParamTab','backupDB','restoreDB','confirmRestore','uploadLogo','deleteLogo',
