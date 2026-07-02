@@ -2317,13 +2317,13 @@ function printDocument(id) {
 
     const lignesHtml = d.lignes?.map(l => {
       const puTTC = l.prix_unitaire_ht * (1 + (l.taux_tva || 0) / 100);
-      return `<tr><td>${l.reference || l.art_reference || '-'}</td><td>${l.designation || l.art_designation || '-'}</td><td>${formatNumber(l.quantite)}</td><td>${formatCurrency(puTTC)}</td><td>${l.remise_pourcent || 0}%</td><td>${l.taux_tva}%</td><td>${formatCurrency(l.montant_ttc)}</td></tr>`;
+      return `<tr><td>${l.reference || l.art_reference || '-'}</td><td>${l.designation || l.art_designation || '-'}</td><td>${formatNumber(l.quantite)}</td><td>${formatCurrency(l.prix_unitaire_ht)}</td><td>${formatCurrency(puTTC)}</td><td>${l.remise_pourcent || 0}%</td><td>${l.taux_tva}%</td><td>${formatCurrency(l.montant_ht)}</td><td>${formatCurrency(l.montant_ttc)}</td></tr>`;
     }).join('') || '';
 
     const totalsHtml = `
-      <tr class="total-row"><td colspan="6" style="text-align:right">Total TTC:</td><td>${formatCurrency(d.net_a_payer)} ${devise}</td></tr>
-      <tr class="total-row"><td colspan="6" style="text-align:right">Dont TVA:</td><td>${formatCurrency(d.total_tva)}</td></tr>
-      <tr class="total-row"><td colspan="6" style="text-align:right;font-size:14px">NET À PAYER:</td><td style="font-size:14px;color:${societe.couleur}">${formatCurrency(d.net_a_payer)} ${devise}</td></tr>
+      <tr class="total-row"><td colspan="7" style="text-align:right">Total HT:</td><td>${formatCurrency(d.montant_ht)} ${devise}</td><td></td></tr>
+      <tr class="total-row"><td colspan="7" style="text-align:right">Dont TVA:</td><td colspan="2">${formatCurrency(d.total_tva)}</td></tr>
+      <tr class="total-row"><td colspan="7" style="text-align:right;font-size:14px">NET À PAYER:</td><td></td><td style="font-size:14px;color:${societe.couleur}">${formatCurrency(d.net_a_payer)} ${devise}</td></tr>
     `;
 
     const clientHtml = d.client_nom ? `
@@ -2364,7 +2364,7 @@ function printDocument(id) {
           <div style="text-align:right;font-size:11px">${societe.ice ? `<div>ICE: ${societe.ice}</div>` : ''}</div>
         </div>
         <div class="info-grid">${clientHtml || fournisseurHtml}<div class="info-card"><h4>DOCUMENT</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: ${d.statut}</p></div></div>
-        <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
+        <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total HT</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
         <div class="footer"><div>${societe.nom} ${societe.telephone ? '- ' + societe.telephone : ''}${societe.email ? ' | ' + societe.email : ''}</div><div></div></div>
       `,
 
@@ -2398,7 +2398,7 @@ function printDocument(id) {
           <div class="header">${societe.logo ? `<img src="${societe.logo}" class="logo-img">` : ''}<div class="soc-name">${societe.nom}</div><div class="soc-slogan">${societe.slogan}</div></div>
           <div class="doc-header"><span class="type">${typeLabel}</span><span class="ref">N° ${d.numero} | ${dateDoc}</span></div>
           <div class="info-grid">${clientHtml || fournisseurHtml}<div class="info-card"><h4>Détails</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: <strong>${d.statut}</strong></p></div></div>
-          <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
+          <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total HT</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
           <div class="footer">${societe.nom} — ${societe.telephone}${societe.email ? ' | ' + societe.email : ''}${societe.ice ? ' | ICE: ' + societe.ice : ''}</div>
         </div>
       `,
@@ -2424,7 +2424,7 @@ function printDocument(id) {
         <hr>
         <div class="doc-ref">${typeLabel} N° ${d.numero} — ${dateDoc}</div>
         <div class="info-grid"><div>${clientHtml || fournisseurHtml || ''}</div><div style="text-align:right">${societe.ice ? 'ICE: ' + societe.ice + '<br>' : ''}${societe.telephone ? 'Tel: ' + societe.telephone + '<br>' : ''}${societe.email ? 'Email: ' + societe.email + '<br>' : ''}</div></div>
-        <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
+        <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total HT</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
         <div class="footer">${societe.nom}</div>
       `,
 
@@ -2467,7 +2467,7 @@ function printDocument(id) {
               <div>${clientHtml || fournisseurHtml || '<h4>Tiers</h4><p>-</p>'}</div>
               <div><h4>Références</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: ${d.statut}${d.conditions_paiement ? '</p><p>Paiement: ' + d.conditions_paiement : ''}</p></div>
             </div>
-            <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
+          <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total HT</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
             ${d.notes ? `<div style="margin-top:15px;padding:10px;background:#f8f9fa;border-radius:4px;font-size:10px"><strong>Notes:</strong> ${d.notes}</div>` : ''}
           </div>
           <div class="signatures"><div class="signature-box">Signature client</div><div class="signature-box">Cachet & signature</div></div>
