@@ -2361,11 +2361,12 @@ function printDocument(id) {
         </style>
         <div class="header">
           <div class="header-left">${societe.logo ? `<img src="${societe.logo}" class="logo-img">` : ''}<div><div class="soc-name">${societe.nom}</div><div class="soc-slogan">${societe.slogan}</div><div class="doc-badge">${typeLabel}</div><div class="doc-ref">N° ${d.numero}</div></div></div>
-          <div style="text-align:right;font-size:11px">${societe.ice ? `<div>ICE: ${societe.ice}</div>` : ''}</div>
+          <div style="text-align:right;font-size:11px">${societe.ice ? `<div>ICE: ${societe.ice}</div>` : ''}${societe.rc ? `<div>RC: ${societe.rc}</div>` : ''}${societe.if_fiscal ? `<div>IF: ${societe.if_fiscal}</div>` : ''}${societe.patente ? `<div>Patente: ${societe.patente}</div>` : ''}${societe.cnss ? `<div>CNSS: ${societe.cnss}</div>` : ''}</div>
         </div>
         <div class="info-grid">${clientHtml || fournisseurHtml}<div class="info-card"><h4>DOCUMENT</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: ${d.statut}</p></div></div>
         <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total HT</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
-        <div class="footer"><div>${societe.nom} ${societe.telephone ? '- ' + societe.telephone : ''}${societe.email ? ' | ' + societe.email : ''}</div><div></div></div>
+        <div class="footer"><div>${societe.nom} ${societe.adresse ? '— ' + societe.adresse + (societe.ville ? ', ' + societe.ville : '') : ''} ${societe.telephone ? '| Tel: ' + societe.telephone : ''} ${societe.email ? '| ' + societe.email : ''} ${societe.banque && societe.rib ? '| ' + societe.banque + ': ' + societe.rib : ''}</div><div></div></div>
+        ${societe.mentions ? `<div style="margin-top:5px;font-size:9px;color:#6b7280;text-align:center">${societe.mentions}</div>` : ''}
       `,
 
       // ========== MODERNE ==========
@@ -2397,9 +2398,9 @@ function printDocument(id) {
         <div class="page">
           <div class="header">${societe.logo ? `<img src="${societe.logo}" class="logo-img">` : ''}<div class="soc-name">${societe.nom}</div><div class="soc-slogan">${societe.slogan}</div></div>
           <div class="doc-header"><span class="type">${typeLabel}</span><span class="ref">N° ${d.numero} | ${dateDoc}</span></div>
-          <div class="info-grid">${clientHtml || fournisseurHtml}<div class="info-card"><h4>Détails</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: <strong>${d.statut}</strong></p></div></div>
+          <div class="info-grid">${clientHtml || fournisseurHtml}<div class="info-card"><h4>Détails</h4><p>Date: ${dateDoc}</p><p>Échéance: ${d.date_echeance ? formatDate(d.date_echeance) : '-'}</p><p>Statut: <strong>${d.statut}</strong></p>${d.conditions_paiement ? `<p>Paiement: ${d.conditions_paiement}</p>` : ''}</div></div>
           <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total HT</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
-          <div class="footer">${societe.nom} — ${societe.telephone}${societe.email ? ' | ' + societe.email : ''}${societe.ice ? ' | ICE: ' + societe.ice : ''}</div>
+          <div class="footer">${societe.nom} — ${societe.adresse ? societe.adresse + (societe.ville ? ', ' + societe.ville : '') + ' — ' : ''}${societe.telephone ? 'Tel: ' + societe.telephone : ''}${societe.email ? ' | ' + societe.email : ''}${societe.ice ? ' | ICE: ' + societe.ice : ''}${societe.rc ? ' | RC: ' + societe.rc : ''}${societe.if_fiscal ? ' | IF: ' + societe.if_fiscal : ''}${societe.patente ? ' | Patente: ' + societe.patente : ''}${societe.cnss ? ' | CNSS: ' + societe.cnss : ''}${societe.banque && societe.rib ? '<br>' + societe.banque + ': ' + societe.rib : ''}${societe.mentions ? '<br>' + societe.mentions : ''}</div>
         </div>
       `,
 
@@ -2423,9 +2424,9 @@ function printDocument(id) {
         <div class="header"><div style="display:flex;justify-content:space-between;align-items:center">${societe.logo ? `<img src="${societe.logo}" class="logo-img">` : ''}<div style="text-align:right"><div class="soc-name">${societe.nom}</div><div style="font-size:10px">${societe.slogan}</div></div></div></div>
         <hr>
         <div class="doc-ref">${typeLabel} N° ${d.numero} — ${dateDoc}</div>
-        <div class="info-grid"><div>${clientHtml || fournisseurHtml || ''}</div><div style="text-align:right">${societe.ice ? 'ICE: ' + societe.ice + '<br>' : ''}${societe.telephone ? 'Tel: ' + societe.telephone + '<br>' : ''}${societe.email ? 'Email: ' + societe.email + '<br>' : ''}</div></div>
+        <div class="info-grid"><div>${clientHtml || fournisseurHtml || ''}</div><div style="text-align:right">${societe.adresse ? societe.adresse + (societe.ville ? ', ' + societe.ville : '') + '<br>' : ''}${societe.ice ? 'ICE: ' + societe.ice + '<br>' : ''}${societe.rc ? 'RC: ' + societe.rc + '<br>' : ''}${societe.if_fiscal ? 'IF: ' + societe.if_fiscal + '<br>' : ''}${societe.patente ? 'Patente: ' + societe.patente + '<br>' : ''}${societe.cnss ? 'CNSS: ' + societe.cnss + '<br>' : ''}${societe.telephone ? 'Tel: ' + societe.telephone + '<br>' : ''}${societe.email ? 'Email: ' + societe.email + '<br>' : ''}${societe.banque && societe.rib ? societe.banque + ': ' + societe.rib + '<br>' : ''}</div></div>
         <table><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>PU HT</th><th>PU TTC</th><th>Remise</th><th>TVA</th><th>Total HT</th><th>Total TTC</th></tr></thead><tbody>${lignesHtml}</tbody><tfoot>${totalsHtml}</tfoot></table>
-        <div class="footer">${societe.nom}</div>
+        <div class="footer">${societe.nom} ${societe.telephone ? '| Tel: ' + societe.telephone : ''}${societe.email ? ' | ' + societe.email : ''}${societe.banque && societe.rib ? ' | ' + societe.banque + ': ' + societe.rib : ''}${societe.mentions ? '<br>' + societe.mentions : ''}</div>
       `,
 
       // ========== PROFESSIONNEL ==========
@@ -2473,7 +2474,7 @@ function printDocument(id) {
           <div class="signatures"><div class="signature-box">Signature client</div><div class="signature-box">Cachet & signature</div></div>
           <div class="footer">
             <div>${societe.nom}${societe.adresse ? ' — ' + societe.adresse + (societe.ville ? ', ' + societe.ville : '') : ''}</div>
-            <div class="footer-grid">${societe.telephone ? '<div>Tel: ' + societe.telephone + '</div>' : ''}${societe.email ? '<div>Email: ' + societe.email + '</div>' : ''}${societe.ice ? '<div>ICE: ' + societe.ice + '</div>' : ''}${societe.rc ? '<div>RC: ' + societe.rc + '</div>' : ''}${societe.if_fiscal ? '<div>IF: ' + societe.if_fiscal + '</div>' : ''}${societe.banque && societe.rib ? '<div>' + societe.banque + ': ' + societe.rib + '</div>' : ''}</div>
+            <div class="footer-grid">${societe.telephone ? '<div>Tel: ' + societe.telephone + '</div>' : ''}${societe.email ? '<div>Email: ' + societe.email + '</div>' : ''}${societe.ice ? '<div>ICE: ' + societe.ice + '</div>' : ''}${societe.rc ? '<div>RC: ' + societe.rc + '</div>' : ''}${societe.if_fiscal ? '<div>IF: ' + societe.if_fiscal + '</div>' : ''}${societe.patente ? '<div>Patente: ' + societe.patente + '</div>' : ''}${societe.cnss ? '<div>CNSS: ' + societe.cnss + '</div>' : ''}${societe.banque && societe.rib ? '<div>' + societe.banque + ': ' + societe.rib + '</div>' : ''}</div>
             ${societe.mentions ? '<div style="margin-top:4px">' + societe.mentions + '</div>' : ''}
           </div>
         </div>
