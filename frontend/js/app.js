@@ -1838,7 +1838,7 @@ function updateDocTotal() {
     footer.style.cssText = 'margin-top:0.5rem;text-align:right;font-weight:700;font-size:1.1rem;padding:0.5rem;border-top:2px solid var(--accent)';
     $('#docLignes').after(footer);
   }
-  footer.innerHTML = `HT: ${formatCurrency(totalHT)} MAD | TVA: ${formatCurrency(totalTVA)} MAD | <span style="color:var(--accent)">TTC: ${formatCurrency(totalHT + totalTVA)} MAD</span>`;
+  footer.innerHTML = `HT: ${formatCurrency(totalHT)} MAD | TVA 20%: ${formatCurrency(totalTVA)} MAD | <span style="color:var(--accent)">TTC: ${formatCurrency(totalHT + totalTVA)} MAD</span>`;
 }
 
 window.addDocLigne = function(type) {
@@ -2056,7 +2056,7 @@ function editDocument(id) {
       <table id="editDocTable"><thead><tr><th>Réf.</th><th>Désignation</th><th>Unité source</th>${canEdit ? '<th>Qté</th><th>PU HT</th><th>PU TTC</th><th>TVA %</th>' : '<th>Qté</th><th>PU HT</th><th>TVA</th>'}<th>Total HT</th>${canEdit ? '<th></th>' : ''}</tr></thead>
       <tbody id="editDocLignes">${d.lignes?.length ? d.lignes.map(l => editLigneRow(l, canEdit)).join('') : '<tr><td colspan="8">Aucune ligne</td></tr>'}</tbody>
       <tfoot id="editDocFoot"><tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right;font-weight:600">Total HT:</td><td id="editTotalHT">${formatCurrency(d.montant_ht)}</td>${canEdit ? '<td></td>' : ''}</tr>
-      <tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right">TVA:</td><td id="editTotalTVA">${formatCurrency(d.total_tva)}</td>${canEdit ? '<td></td>' : ''}</tr>
+      <tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right">TVA 20%:</td><td id="editTotalTVA">${formatCurrency(d.total_tva)}</td>${canEdit ? '<td></td>' : ''}</tr>
       <tr><td colspan="${canEdit ? 7 : 6}" style="text-align:right;font-weight:700;font-size:1rem">NET À PAYER:</td><td id="editTotalTTC" style="font-weight:700;font-size:1rem;color:var(--accent)">${formatCurrency(d.net_a_payer)}</td>${canEdit ? '<td></td>' : ''}</tr></tfoot></table>
       ${canEdit ? '<button class="btn btn-sm btn-secondary" onclick="addEditDocLigne(' + id + ')" style="margin-top:0.3rem">+ Ajouter ligne</button>' : ''}
       ${d.notes ? html`<div class="form-group" style="margin-top:1rem"><label>Notes</label><textarea class="form-textarea" id="editDocNotes" ${canEdit ? '' : 'readonly'}>${d.notes}</textarea></div>` : ''}
@@ -2322,7 +2322,7 @@ function printDocument(id) {
 
     const totalsHtml = `
       <tr class="total-row"><td colspan="7" style="text-align:right">Total HT:</td><td>${formatCurrency(d.montant_ht)} ${devise}</td><td></td></tr>
-      <tr class="total-row"><td colspan="7" style="text-align:right">Dont TVA:</td><td colspan="2">${formatCurrency(d.total_tva)}</td></tr>
+      <tr class="total-row"><td colspan="7" style="text-align:right">TVA 20%:</td><td colspan="2">${formatCurrency(d.total_tva)}</td></tr>
       <tr class="total-row"><td colspan="7" style="text-align:right;font-size:14px">NET À PAYER:</td><td></td><td style="font-size:14px;color:${societe.couleur}">${formatCurrency(d.net_a_payer)} ${devise}</td></tr>
     `;
 
