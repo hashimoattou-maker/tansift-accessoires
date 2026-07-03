@@ -12,8 +12,8 @@ module.exports = function(db) {
       const params = [];
 
       if (search) {
-        sql += ` AND (a.reference LIKE ? OR a.designation LIKE ? OR a.code_barre LIKE ?)`;
-        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        sql += ` AND (a.reference LIKE ? OR a.designation LIKE ? OR a.code_barre = ?)`;
+        params.push(`%${search}%`, `%${search}%`, search);
       }
       if (categorie_id) { sql += ` AND a.categorie_id = ?`; params.push(categorie_id); }
       if (type) { sql += ` AND a.type_article = ?`; params.push(type); }
@@ -26,11 +26,13 @@ module.exports = function(db) {
       if (search) {
         const s = search.replace(/'/g, "''");
         sql += ` ORDER BY CASE
-          WHEN a.reference LIKE '${s}%' THEN 0
-          WHEN a.designation LIKE '${s}%' THEN 1
-          WHEN a.reference LIKE '%${s}%' THEN 2
-          WHEN a.designation LIKE '%${s}%' THEN 3
-          ELSE 4 END, a.reference`;
+          WHEN a.reference = '${s}' THEN 0
+          WHEN a.code_barre = '${s}' THEN 0
+          WHEN a.reference LIKE '${s}%' THEN 1
+          WHEN a.designation LIKE '${s}%' THEN 2
+          WHEN a.reference LIKE '%${s}%' THEN 3
+          WHEN a.designation LIKE '%${s}%' THEN 4
+          ELSE 5 END, a.reference`;
       } else {
         sql += ` ORDER BY a.reference`;
       }
