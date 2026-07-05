@@ -2553,15 +2553,24 @@ window.toggleScanner = async function() {
   }
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } } });
+    } catch {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    }
     _scannerStream = stream;
     const video = document.createElement('video');
     video.srcObject = stream;
     video.autoplay = true;
     video.playsInline = true;
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('muted', 'true');
+    video.muted = true;
     video.style.cssText = 'width:100%;border-radius:8px;background:#000';
     region.innerHTML = '';
     region.appendChild(video);
+    await video.play().catch(() => {});
     btn.textContent = '⏹️ Arrêter le scanner';
 
     if ('BarcodeDetector' in window) {
