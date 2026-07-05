@@ -2530,8 +2530,6 @@ function renderBarcodes(page) {
     $('#bulkArticleSelect').innerHTML = opts;
   });
 
-  window.scanBarcodeManual = scanBarcodeManual;
-  window.toggleScanner = toggleScanner;
   window.previewLabel = previewLabel;
   window.generateLabel = generateLabel;
   window.printBulkLabels = printBulkLabels;
@@ -3184,7 +3182,7 @@ async function loadNotifications() {
   'showDocumentForm','editDocument','printDocument','changeDocStatut','supprimerDocument','loadDocuments','saveDocument',
   'saveEditDocument','addEditDocLigne','removeEditLigne','recalcEditDoc','recalcEditTTC','recalcEditFromTTC','searchEditArticle','selectEditArticle',
   'addDocLigne','removeLigne','searchDocArticle','selectDocArticle','scanDocBarcode',
-  'scanBarcode','generateLabel','previewLabel','printBulkLabels','transfertDocument',
+  'scanBarcodeManual','toggleScanner','generateLabel','previewLabel','printBulkLabels','transfertDocument',
   'generateReport','exportZip','saveSociete','saveConfiguration','saveUser','editUser','showUserForm','switchParamTab','backupDB','restoreDB','confirmRestore','uploadLogo','deleteLogo',
   'renderArticles','renderDashboard','renderMoteurs','renderClients','renderSituation','renderFournisseurs','renderBarcodes','renderRapports','renderParametres','renderAudit','renderPage','renderBreadcrumb',
   'login','logout','checkAuth','apiFetch','html',
