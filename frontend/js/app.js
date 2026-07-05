@@ -2493,14 +2493,11 @@ function renderBarcodes(page) {
     <div class="page-title">Codes-barres & Étiquettes</div>
     <div class="grid grid-2">
       <div class="card">
-        <div class="card-header"><h3>🔍 Scanner</h3></div>
-        <div class="scanner-container" id="scannerContainer">
-          <div id="scannerPlaceholder" style="background:#000;height:250px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;">
-            <div style="text-align:center"><p style="font-size:2rem">📷</p><p>Cliquez pour activer le scanner</p></div>
-          </div>
-        </div>
-        <div style="margin-top:0.5rem"><input type="text" id="barcodeInput" class="form-control" placeholder="Ou saisir manuellement un code-barres..." onkeydown="if(event.key==='Enter')scanBarcode()"></div>
-        <button class="btn btn-primary btn-full" style="margin-top:0.5rem" onclick="scanBarcode()">Rechercher</button>
+        <div class="card-header"><h3>📷 Scanner</h3></div>
+        <div id="scannerRegion" style="min-height:250px"></div>
+        <button id="scanToggleBtn" class="btn btn-primary btn-full" style="margin-top:0.5rem" onclick="toggleScanner()">📷 Activer la caméra</button>
+        <div style="margin-top:0.5rem"><input type="text" id="barcodeInput" class="form-control" placeholder="Ou saisir manuellement un code-barres..." onkeydown="if(event.key==='Enter')scanBarcodeManual()"></div>
+        <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="scanBarcodeManual()">🔍 Rechercher</button>
         <div id="scanResult" class="hidden" style="margin-top:0.5rem"></div>
       </div>
       <div class="card">
@@ -2533,15 +2530,65 @@ function renderBarcodes(page) {
     $('#bulkArticleSelect').innerHTML = opts;
   });
 
-  window.scanBarcode = scanBarcode;
+  window.scanBarcodeManual = scanBarcodeManual;
+  window.toggleScanner = toggleScanner;
   window.previewLabel = previewLabel;
   window.generateLabel = generateLabel;
   window.printBulkLabels = printBulkLabels;
 }
 
-async function scanBarcode() {
-  const code = $('#barcodeInput')?.value?.trim();
-  if (!code) { showToast('Saisissez un code-barres', 'error'); return; }
+let _scannerStream = null;
+let _scannerInterval = null;
+
+window.toggleScanner = async function() {
+  const btn = $('#scanToggleBtn');
+  const region = $('#scannerRegion');
+
+  if (_scannerStream) {
+    _scannerStream.getTracks().forEach(t => t.stop());
+    _scannerStream = null;
+    clearInterval(_scannerInterval);
+    _scannerInterval = null;
+    region.innerHTML = '';
+    btn.textContent = '📷 Activer la caméra';
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    _scannerStream = stream;
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.style.cssText = 'width:100%;border-radius:8px;background:#000';
+    region.innerHTML = '';
+    region.appendChild(video);
+    btn.textContent = '⏹️ Arrêter le scanner';
+
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'qr_code'] });
+      _scannerInterval = setInterval(async () => {
+        if (!video.videoWidth) return;
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length) {
+            const code = barcodes[0].rawValue;
+            $('#barcodeInput').value = code;
+            showToast('Code détecté: ' + code, 'success');
+            lookupBarcode(code);
+          }
+        } catch {}
+      }, 500);
+    } else {
+      region.innerHTML += '<p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-secondary)">Caméra active — scan manuel requis (BarcodeDetector non supporté sur ce navigateur)</p>';
+    }
+  } catch (e) {
+    showToast('Caméra non accessible: ' + e.message, 'error');
+  }
+};
+
+async function lookupBarcode(code) {
   try {
     const article = await apiFetch('/barcodes/scan', { method: 'POST', body: JSON.stringify({ code }) });
     const result = $('#scanResult');
@@ -2558,6 +2605,12 @@ async function scanBarcode() {
     `;
   } catch (e) { showToast('Article introuvable', 'error'); }
 }
+
+window.scanBarcodeManual = function() {
+  const code = $('#barcodeInput')?.value?.trim();
+  if (!code) { showToast('Saisissez un code-barres', 'error'); return; }
+  lookupBarcode(code);
+};
 
 function previewLabel() {
   const articleId = $('#labelArticleSelect')?.value;
