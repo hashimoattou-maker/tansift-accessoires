@@ -2557,7 +2557,11 @@ window.toggleScanner = async function() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } } });
     } catch {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
     }
     _scannerStream = stream;
     const video = document.createElement('video');
