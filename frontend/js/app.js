@@ -2535,67 +2535,48 @@ function renderBarcodes(page) {
   window.printBulkLabels = printBulkLabels;
 }
 
-let _scannerStream = null;
-let _scannerInterval = null;
+let _scannerInstance = null;
 
 window.toggleScanner = async function() {
   const btn = $('#scanToggleBtn');
   const region = $('#scannerRegion');
 
-  if (_scannerStream) {
-    _scannerStream.getTracks().forEach(t => t.stop());
-    _scannerStream = null;
-    clearInterval(_scannerInterval);
-    _scannerInterval = null;
+  if (_scannerInstance) {
+    _scannerInstance.stop().catch(() => {});
+    _scannerInstance.clear();
+    _scannerInstance = null;
     region.innerHTML = '';
     btn.textContent = '📷 Activer la caméra';
     return;
   }
 
-  try {
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } } });
-    } catch {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      }
-    }
-    _scannerStream = stream;
-    const video = document.createElement('video');
-    video.srcObject = stream;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.setAttribute('playsinline', 'true');
-    video.setAttribute('muted', 'true');
-    video.muted = true;
-    video.style.cssText = 'width:100%;border-radius:8px;background:#000';
-    region.innerHTML = '';
-    region.appendChild(video);
-    await video.play().catch(() => {});
-    btn.textContent = '⏹️ Arrêter le scanner';
+  if (typeof Html5Qrcode === 'undefined') {
+    showToast('Librairie de scan non chargée', 'error');
+    return;
+  }
 
-    if ('BarcodeDetector' in window) {
-      const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'qr_code'] });
-      _scannerInterval = setInterval(async () => {
-        if (!video.videoWidth) return;
-        try {
-          const barcodes = await detector.detect(video);
-          if (barcodes.length) {
-            const code = barcodes[0].rawValue;
-            $('#barcodeInput').value = code;
-            showToast('Code détecté: ' + code, 'success');
-            lookupBarcode(code);
-          }
-        } catch {}
-      }, 500);
-    } else {
-      region.innerHTML += '<p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-secondary)">Caméra active — scan manuel requis (BarcodeDetector non supporté sur ce navigateur)</p>';
-    }
+  const scanner = new Html5Qrcode('scannerRegion');
+  _scannerInstance = scanner;
+
+  try {
+    await scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.5 },
+      (decodedText) => {
+        $('#barcodeInput').value = decodedText;
+        showToast('Code détecté: ' + decodedText, 'success');
+        lookupBarcode(decodedText);
+        scanner.stop().catch(() => {});
+        _scannerInstance = null;
+        btn.textContent = '📷 Activer la caméra';
+      },
+      () => {}
+    );
+    btn.textContent = '⏹️ Arrêter le scanner';
   } catch (e) {
-    showToast('Caméra non accessible: ' + e.message, 'error');
+    showToast('Caméra: ' + e.message, 'error');
+    _scannerInstance = null;
+    region.innerHTML = '<p style="padding:1rem;color:var(--text-secondary);text-align:center">Caméra indisponible — saisissez le code manuellement</p>';
   }
 };
 
