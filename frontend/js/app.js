@@ -2592,7 +2592,7 @@ async function lookupBarcode(code) {
           <div class="stat-item" style="padding:0.3rem"><div class="stat-value" style="font-size:0.9rem">${formatNumber(article.stock_actuel)}</div><div class="stat-label">Stock</div></div>
           <div class="stat-item" style="padding:0.3rem"><div class="stat-value" style="font-size:0.9rem">${formatCurrency(article.prix_vente_ht)}</div><div class="stat-label">PV HT</div></div>
         </div>
-        <button class="btn btn-sm btn-primary" style="margin-top:0.3rem" onclick="navigate('articles');setTimeout(()=>{const s=$('#artSearch');if(s){s.value='${article.reference}';loadArticles();}},300)">Voir dans articles</button>
+        <button class="btn btn-sm btn-primary" style="margin-top:0.3rem" onclick="showArticleDetail(${article.id})">Voir dans articles</button>
       </div>
     `;
   } catch (e) { showToast('Article introuvable', 'error'); }
