@@ -2568,7 +2568,6 @@ function previewLabel() {
     const format = $('#labelFormat').value;
     $('#labelPreview').innerHTML = html`
       <p style="margin-bottom:0.5rem"><strong>${a.reference}</strong> — ${a.designation}</p>
-      <p style="font-size:0.8rem;color:var(--text-secondary)">${formatCurrency(a.prix_vente_ht)} MAD</p>
       <svg id="barcodeSvg"></svg>
     `;
     try {
@@ -2587,13 +2586,11 @@ function generateLabel() {
       body{font-family:Arial,sans-serif;text-align:center;padding:20px;margin:0}
       .label-name{font-size:16px;font-weight:700;margin-bottom:2px}
       .label-ref{font-size:12px;color:#555;margin-bottom:4px}
-      .label-price{font-size:14px;color:#2563eb;font-weight:bold;margin-bottom:8px}
       svg{max-width:100%}
       @media print{@page{margin:5mm}}
     </style></head><body>
       <div class="label-name">${a.designation}</div>
       <div class="label-ref">${a.reference}</div>
-      <div class="label-price">${formatCurrency(a.prix_vente_ht)} MAD</div>
       ${svg.outerHTML}
     </body></html>`);
     win.document.close();
@@ -2612,10 +2609,9 @@ async function printBulkLabels() {
       body{font-family:Arial,sans-serif;padding:10px}
       .label{display:inline-block;border:1px dashed #ccc;padding:10px;margin:5px;text-align:center;width:200px}
       .label strong{display:block;font-size:12px}
-      .label .price{color:#2563eb;font-weight:bold;font-size:14px}
       @media print{@page{margin:5mm}}
     </style></head><body>
-    <div>${data.labels.map(l => `<div class="label"><strong>${l.reference}</strong><span style="font-size:10px;display:block">${l.designation}</span><div class="price">${formatCurrency(l.prix)} MAD</div><svg class="bc-${l.code_barre}"></svg></div>`).join('')}</div>
+    <div>${data.labels.map(l => `<div class="label"><strong>${l.reference}</strong><span style="font-size:10px;display:block">${l.designation}</span><svg class="bc-${l.code_barre}"></svg></div>`).join('')}</div>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
     <script>${data.labels.map(l => `JsBarcode('.bc-${l.code_barre}', '${l.code_barre}', {width:1.5,height:30,displayValue:true,fontSize:10});`).join('')} window.print();<\/script>
     </body></html>`);
