@@ -47,7 +47,7 @@ async function generateSequentialCode(db, table, column, prefix, padLen = 4) {
 async function updateClientSolde(db, clientId) {
   const row = await db.prepare(`
     SELECT 
-      (SELECT COALESCE(SUM(net_a_payer), 0) FROM documents WHERE client_id = ? AND type_document IN ('facture_client','avoir_client') AND statut != 'annule') as total_facture,
+      (SELECT COALESCE(SUM(net_a_payer), 0) FROM documents WHERE client_id = ? AND type_document IN ('facture_client','avoir_client','bon_livraison','bon_commande_client') AND statut != 'annule') as total_facture,
       (SELECT COALESCE(SUM(montant), 0) FROM paiements_clients WHERE client_id = ?) as total_paye
   `).get(clientId, clientId);
   const solde = (row.total_facture || 0) - (row.total_paye || 0);

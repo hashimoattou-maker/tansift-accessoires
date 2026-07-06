@@ -121,14 +121,19 @@ async function initializeDatabase() {
     console.warn('Seed warning:', e.message);
   }
 
-  // Recalibrate client balances
+  // Recalibrate client balances (inclut bon_livraison + bon_commande_client)
   try {
-    const { updateClientSolde } = require('../utils/helpers');
     const clients = await dbInstance.prepare('SELECT id FROM clients WHERE actif = 1').all();
     for (const c of clients) {
-      await updateClientSolde(dbInstance, c.id);
+      const row = await dbInstance.prepare(`
+        SELECT 
+          (SELECT COALESCE(SUM(net_a_payer), 0) FROM documents WHERE client_id = ? AND type_document IN ('facture_client','avoir_client','bon_livraison','bon_commande_client') AND statut != 'annule') as total_facture,
+          (SELECT COALESCE(SUM(montant), 0) FROM paiements_clients WHERE client_id = ?) as total_paye
+      `).get(c.id, c.id);
+      const solde = (row.total_facture || 0) - (row.total_paye || 0);
+      await dbInstance.prepare('UPDATE clients SET solde_actuel = ? WHERE id = ?').run(solde, c.id);
     }
-    console.log(`[init] Soldes ${clients.length} clients recalibrés.`);
+    console.log(`[init] Soldes ${clients.length} clients recalibrés (inclut bon_livraison).`);
   } catch (e) {
     console.warn('Recalibration soldes:', e.message);
   }
@@ -663,6 +668,21 @@ async function createTables() {
     await pool.query(`DELETE FROM mouvements_stock WHERE article_id NOT IN (SELECT id FROM articles WHERE reference = 'ACCES-000003')`);
     console.log('[migration] Mouvements stock nettoyés (conservé: ACCES-000003)');
   } catch (e) { /* exists */ }
+
+  // Migration: recalculer tous les soldes clients (inclut bon_livraison + bon_commande_client)
+  try {
+    const [clients] = await pool.query(`SELECT id FROM clients WHERE actif = 1`);
+    for (const c of clients) {
+      const [row] = await pool.query(`
+        SELECT 
+          (SELECT COALESCE(SUM(net_a_payer), 0) FROM documents WHERE client_id = ? AND type_document IN ('facture_client','avoir_client','bon_livraison','bon_commande_client') AND statut != 'annule') as total_facture,
+          (SELECT COALESCE(SUM(montant), 0) FROM paiements_clients WHERE client_id = ?) as total_paye
+      `, [c.id, c.id]);
+      const solde = (row[0].total_facture || 0) - (row[0].total_paye || 0);
+      await pool.query(`UPDATE clients SET solde_actuel = ? WHERE id = ?`, [solde, c.id]);
+    }
+    console.log(`[migration] Soldes ${clients.length} clients recalculés (inclut bon_livraison)`);
+  } catch (e) { console.warn('Recalibration soldes:', e.message); }
 }
 
 async function seedData() {

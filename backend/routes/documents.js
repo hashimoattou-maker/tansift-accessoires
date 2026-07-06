@@ -89,7 +89,7 @@ module.exports = function(db) {
           }
         }
 
-        if (client_id && ['facture_client', 'avoir_client'].includes(type_document)) {
+        if (client_id) {
           await updateClientSolde(db, client_id);
         }
       }
