@@ -657,6 +657,12 @@ async function createTables() {
   try {
     await pool.query(`UPDATE articles SET stock_unite = stock_actuel WHERE (est_moteur = 1 OR type_unite IS NOT NULL) AND stock_unite = 0 AND stock_actuel > 0`);
   } catch (e) { /* exists */ }
+
+  // Migration: nettoyer mouvements_stock sauf ACCES-000003
+  try {
+    await pool.query(`DELETE FROM mouvements_stock WHERE article_id NOT IN (SELECT id FROM articles WHERE reference = 'ACCES-000003')`);
+    console.log('[migration] Mouvements stock nettoyés (conservé: ACCES-000003)');
+  } catch (e) { /* exists */ }
 }
 
 async function seedData() {
