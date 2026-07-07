@@ -233,11 +233,11 @@ async function renderArticles(page) {
     <div class="page-title">Articles & Stock <button class="btn btn-primary" onclick="showArticleForm()">+ Nouvel article</button></div>
     <div class="filters-bar">
       <div style="display:inline-flex;align-items:stretch;gap:0">
-        <input type="text" id="artSearch" class="form-control" placeholder="Référence, désignation..." style="width:200px;border-radius:var(--radius) 0 0 var(--radius)" onkeydown="if(event.key==='Enter'){event.preventDefault()}" oninput="loadArticles()">
+        <input type="text" id="artSearch" class="form-control" placeholder="Référence, désignation..." style="width:200px;border-radius:var(--radius) 0 0 var(--radius)" onkeydown="if(event.key==='Enter'){event.preventDefault()}" oninput="window._artPage=1;loadArticles()">
         <button type="button" class="btn btn-secondary" style="border-radius:0 var(--radius) var(--radius) 0;border-left:0" onclick="loadArticles()">🔍</button>
       </div>
-      <select id="artCategorie" class="form-select" style="width:150px" onchange="loadArticles()"><option value="">Toutes catégories</option></select>
-      <select id="artFilter" class="form-select" style="width:150px" onchange="loadArticles()">
+      <select id="artCategorie" class="form-select" style="width:150px" onchange="window._artPage=1;loadArticles()"><option value="">Toutes catégories</option></select>
+      <select id="artFilter" class="form-select" style="width:150px" onchange="window._artPage=1;loadArticles()">
         <option value="">Tous articles</option><option value="alerte">Stock alerte</option><option value="rupture">En rupture</option>
       </select>
       <button class="btn btn-secondary btn-sm" onclick="exportArticlesCSV()">📥 CSV</button>
@@ -266,6 +266,7 @@ async function renderArticles(page) {
   window.editArticle = editArticle;
   window.deleteArticle = deleteArticle;
 
+  window._artPage = 1;
   loadArticles();
 }
 
@@ -277,7 +278,7 @@ async function loadArticles() {
   const search = $('#artSearch')?.value || '';
   const cat = $('#artCategorie')?.value || '';
   const filter = $('#artFilter')?.value || '';
-  let url = `/articles?limit=500&search=${encodeURIComponent(search)}`;
+  let url = `/articles?limit=50&search=${encodeURIComponent(search)}&page=${window._artPage || 1}`;
   if (cat) url += `&categorie_id=${cat}`;
 
   try {
@@ -306,10 +307,34 @@ async function loadArticles() {
         </td>
       </tr>`;
     }).join('') : '<tr><td colspan="9"><div class="empty-state"><p>Aucun article trouvé</p></div></td></tr>';
+
+    const totalPages = Math.ceil(data.total / 50);
+    const currentPage = window._artPage || 1;
+    let paginationHtml = '';
+    if (totalPages > 1) {
+      paginationHtml = '<div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">';
+      paginationHtml += `<button class="btn btn-sm btn-secondary" onclick="artPage(1)" ${currentPage===1?'disabled':''}>«</button>`;
+      paginationHtml += `<button class="btn btn-sm btn-secondary" onclick="artPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+      const start = Math.max(1, currentPage - 2);
+      const end = Math.min(totalPages, currentPage + 2);
+      if (start > 1) paginationHtml += '<span style="padding:0 0.3rem">...</span>';
+      for (let i = start; i <= end; i++) {
+        paginationHtml += `<button class="btn btn-sm ${i===currentPage?'btn-primary':'btn-secondary'}" onclick="artPage(${i})">${i}</button>`;
+      }
+      if (end < totalPages) paginationHtml += '<span style="padding:0 0.3rem">...</span>';
+      paginationHtml += `<button class="btn btn-sm btn-secondary" onclick="artPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+      paginationHtml += `<button class="btn btn-sm btn-secondary" onclick="artPage(${totalPages})" ${currentPage===totalPages?'disabled':''}>»</button>`;
+      paginationHtml += `<span style="margin-left:0.5rem;font-size:0.85rem;color:var(--text-secondary)">${data.total} articles — page ${currentPage}/${totalPages}</span>`;
+      paginationHtml += '</div>';
+    }
+    const pag = $('#artPagination');
+    if (pag) pag.innerHTML = paginationHtml;
   } catch {
     tbody.innerHTML = '<tr><td colspan="9">Erreur chargement</td></tr>';
   }
 }
+
+window.artPage = function(p) { window._artPage = p; loadArticles(); };
 
 function showArticleForm(articleId) {
   const title = articleId ? 'Modifier article' : 'Nouvel article';
@@ -426,7 +451,8 @@ async function saveArticle(e, id) {
       showToast('Article créé', 'success');
     }
     closeModal();
-    loadArticles();
+  window._artPage = 1;
+  loadArticles();
   } catch (e) { showToast(e.message, 'error'); }
 }
 
