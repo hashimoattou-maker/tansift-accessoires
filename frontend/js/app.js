@@ -277,7 +277,7 @@ async function loadArticles() {
   const search = $('#artSearch')?.value || '';
   const cat = $('#artCategorie')?.value || '';
   const filter = $('#artFilter')?.value || '';
-  let url = `/articles?limit=50&search=${encodeURIComponent(search)}`;
+  let url = `/articles?limit=500&search=${encodeURIComponent(search)}`;
   if (cat) url += `&categorie_id=${cat}`;
 
   try {

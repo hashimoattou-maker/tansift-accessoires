@@ -34,7 +34,7 @@ module.exports = function(db) {
           WHEN a.designation LIKE '%${s}%' THEN 4
           ELSE 5 END, a.reference`;
       } else {
-        sql += ` ORDER BY a.reference`;
+        sql += ` ORDER BY a.id DESC`;
       }
       sql += ` LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
