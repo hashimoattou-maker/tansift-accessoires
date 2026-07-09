@@ -278,7 +278,7 @@ async function loadArticles() {
   const search = $('#artSearch')?.value || '';
   const cat = $('#artCategorie')?.value || '';
   const filter = $('#artFilter')?.value || '';
-  let url = `/articles?limit=50&search=${encodeURIComponent(search)}&page=${window._artPage || 1}`;
+  let url = `/articles?limit=10&search=${encodeURIComponent(search)}&page=${window._artPage || 1}`;
   if (cat) url += `&categorie_id=${cat}`;
 
   try {
@@ -308,7 +308,7 @@ async function loadArticles() {
       </tr>`;
     }).join('') : '<tr><td colspan="9"><div class="empty-state"><p>Aucun article trouvé</p></div></td></tr>';
 
-    const totalPages = Math.ceil(data.total / 50);
+    const totalPages = Math.ceil(data.total / 10);
     const currentPage = window._artPage || 1;
     let paginationHtml = '';
     if (totalPages > 1) {
