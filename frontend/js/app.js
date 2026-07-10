@@ -2655,11 +2655,14 @@ function generateLabel() {
     const win = window.open('', '_blank');
     win.document.write(`<html><head><title>Étiquette - ${a.reference}</title><style>
       *{margin:0;padding:0;box-sizing:border-box}
-      body{font-family:Arial,sans-serif;text-align:center;padding:0;margin:0;font-size:12px}
-      .label-name{font-size:14px;font-weight:700;margin-bottom:1px}
-      .label-ref{font-size:10px;color:#555;margin-bottom:2px}
+      body{font-family:Arial,sans-serif;text-align:center;padding:0;margin:0;font-size:12px;width:76mm;height:130mm;overflow:hidden}
+      .label-name{font-size:11px;font-weight:700;margin-bottom:1px;line-height:1.2}
+      .label-ref{font-size:9px;color:#555;margin-bottom:2px}
       svg{max-width:100%;display:block;margin:0 auto}
-      @media print{@page{margin:0!important;size:auto}}
+      @media print{
+        @page{size:76mm 130mm;margin:2mm!important}
+        html,body{width:76mm;height:130mm;overflow:hidden}
+      }
     </style></head><body>
       <div class="label-name">${a.designation}</div>
       <div class="label-ref">${a.reference}</div>
