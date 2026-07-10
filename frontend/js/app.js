@@ -2654,11 +2654,12 @@ function generateLabel() {
   apiFetch(`/articles/${articleId}`).then(a => {
     const win = window.open('', '_blank');
     win.document.write(`<html><head><title>Étiquette - ${a.reference}</title><style>
-      body{font-family:Arial,sans-serif;text-align:center;padding:20px;margin:0}
-      .label-name{font-size:16px;font-weight:700;margin-bottom:2px}
-      .label-ref{font-size:12px;color:#555;margin-bottom:4px}
-      svg{max-width:100%}
-      @media print{@page{margin:5mm}}
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:Arial,sans-serif;text-align:center;padding:0;margin:0;font-size:12px}
+      .label-name{font-size:14px;font-weight:700;margin-bottom:1px}
+      .label-ref{font-size:10px;color:#555;margin-bottom:2px}
+      svg{max-width:100%;display:block;margin:0 auto}
+      @media print{@page{margin:0!important;size:auto}}
     </style></head><body>
       <div class="label-name">${a.designation}</div>
       <div class="label-ref">${a.reference}</div>
@@ -2677,10 +2678,12 @@ async function printBulkLabels() {
     if (!data?.labels?.length) { showToast('Aucune étiquette générée', 'error'); return; }
     const win = window.open('', '_blank');
     win.document.write(`<html><head><title>Étiquettes lot</title><style>
-      body{font-family:Arial,sans-serif;padding:10px}
-      .label{display:inline-block;border:1px dashed #ccc;padding:10px;margin:5px;text-align:center;width:200px}
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:Arial,sans-serif;padding:0}
+      .label{display:inline-block;border:1px dashed #ccc;padding:5px;margin:0;text-align:center;width:200px}
       .label strong{display:block;font-size:12px}
-      @media print{@page{margin:5mm}}
+      svg{display:block;margin:0 auto}
+      @media print{@page{margin:0!important;size:auto}}
     </style></head><body>
     <div>${data.labels.map(l => `<div class="label"><strong>${l.reference}</strong><span style="font-size:10px;display:block">${l.designation}</span><svg class="bc-${l.code_barre}"></svg></div>`).join('')}</div>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
