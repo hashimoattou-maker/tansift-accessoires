@@ -61,8 +61,18 @@ module.exports = function(db) {
       const { code } = req.body;
       if (!code) return res.status(400).json({ error: 'Code-barres requis' });
 
-      const article = await db.prepare(`SELECT a.*, c.nom as categorie_nom, t.taux as taux_tva_value FROM articles a LEFT JOIN categories c ON a.categorie_id = c.id LEFT JOIN taux_tva t ON a.tva_id = t.id WHERE a.code_barre = ? OR a.reference = ?`).get(code, code);
+      let article = await db.prepare(`SELECT a.*, c.nom as categorie_nom, t.taux as taux_tva_value FROM articles a LEFT JOIN categories c ON a.categorie_id = c.id LEFT JOIN taux_tva t ON a.tva_id = t.id WHERE a.code_barre = ? OR a.reference = ?`).get(code, code);
+
+      if (!article && /^TA\d+$/.test(code)) {
+        const id = parseInt(code.replace(/^TA/, ''));
+        article = await db.prepare(`SELECT a.*, c.nom as categorie_nom, t.taux as taux_tva_value FROM articles a LEFT JOIN categories c ON a.categorie_id = c.id LEFT JOIN taux_tva t ON a.tva_id = t.id WHERE a.id = ?`).get(id);
+      }
+
       if (!article) return res.status(404).json({ error: 'Article introuvable pour ce code-barres' });
+
+      if (!article.code_barre) {
+        await db.prepare(`UPDATE articles SET code_barre = ? WHERE id = ?`).run(code, article.id);
+      }
 
       res.json(article);
     } catch (e) {
