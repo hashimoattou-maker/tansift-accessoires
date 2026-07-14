@@ -2549,7 +2549,7 @@ function renderBarcodes(page) {
   `;
 
   // Load articles for selects
-  apiFetch('/articles?actif=1&limit=500').then(data => {
+  apiFetch('/articles?actif=1&limit=10000').then(data => {
     if (!data?.articles) return;
     const opts = data.articles.map(a => `<option value="${a.id}">${a.reference} - ${a.designation}</option>`).join('');
     $('#labelArticleSelect').innerHTML = '<option value="">Sélectionnez un article...</option>' + opts;
