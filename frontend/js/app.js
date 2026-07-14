@@ -303,6 +303,7 @@ async function loadArticles() {
         <td class="table-actions">
           <button class="btn btn-sm btn-secondary" onclick="editArticle(${a.id})">✏️</button>
           <button class="btn btn-sm btn-secondary" onclick="showArticleDetail(${a.id})">👁️</button>
+          <button class="btn btn-sm btn-secondary" onclick="printArticleBarcode(${a.id})" title="Imprimer code-barres">🖨️</button>
           <button class="btn btn-sm btn-danger" onclick="deleteArticle(${a.id})">🗑️</button>
         </td>
       </tr>`;
@@ -335,6 +336,33 @@ async function loadArticles() {
 }
 
 window.artPage = function(p) { window._artPage = p; loadArticles(); };
+
+async function printArticleBarcode(id) {
+  try {
+    const a = await apiFetch(`/articles/${id}`);
+    if (!a) { showToast('Article introuvable', 'error'); return; }
+    const code = a.code_barre || `TA${String(a.id).padStart(8,'0')}`;
+    const win = window.open('', '_blank');
+    win.document.write(`<html><head><title>Étiquette - ${a.reference}</title><style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:Arial,sans-serif;text-align:center;margin:0;padding:0;font-size:12px;width:100mm;height:60mm;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center}
+      .label-name{font-size:12px;font-weight:700;margin-bottom:1px;line-height:1.2}
+      .label-ref{font-size:10px;color:#555;margin-bottom:2px}
+      svg{max-width:100%;display:block;margin:0 auto}
+      @media print{
+        @page{size:100mm 60mm;margin:2mm!important}
+        html,body{width:100mm;height:60mm;overflow:hidden}
+      }
+    </style></head><body>
+      <div class="label-name">${a.designation}</div>
+      <div class="label-ref">${a.reference}</div>
+      <svg id="bc"></svg>
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+      <script>JsBarcode('#bc','${code}',{format:'CODE128',width:2,height:40,displayValue:true,fontSize:12,margin:5});window.print();window.close();<\/script>
+    </body></html>`);
+    win.document.close();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
 
 function showArticleForm(articleId) {
   const title = articleId ? 'Modifier article' : 'Nouvel article';
@@ -3200,7 +3228,7 @@ async function loadNotifications() {
 // Ensure ALL functions used in onclick attributes are on window
 ;[
   'navigate','closeModal','openModal','showToast','formatDate','formatCurrency',
-  'showArticleForm','editArticle','deleteArticle','loadArticles','showArticleDetail','exportArticlesCSV','importArticlesCSV','processImportCSV','saveArticle','previewArticleImage',
+  'showArticleForm','editArticle','deleteArticle','loadArticles','showArticleDetail','exportArticlesCSV','importArticlesCSV','processImportCSV','saveArticle','previewArticleImage','printArticleBarcode',
   'showMoteurForm','showMoteurDetail','desassemblerMoteur','confirmDesassembler','reconstruireMoteur','loadMoteurs',
   'showClientForm','editClient','showClientDetail','showClientSituation','loadClients','saveClient',
   'showPaiementForm','loadSituation','exportSoldes','savePaiement',
