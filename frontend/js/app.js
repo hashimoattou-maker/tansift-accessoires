@@ -384,7 +384,7 @@ function showArticleForm(articleId) {
             <div class="form-group"><label>Image</label>
               <div style="display:flex;gap:1rem;align-items:start">
                 <div style="flex:1"><input type="file" class="form-control" accept="image/*" onchange="previewArticleImage(this)"></div>
-                <div id="articleImagePreview" style="width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-light);flex-shrink:0">${a.image ? `<img src="${a.image}" style="width:100%;height:100%;object-fit:cover">` : ''}</div>
+                <div id="articleImagePreview" style="width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-light);flex-shrink:0;position:relative">${a.image ? `<img src="${a.image}" style="width:100%;height:100%;object-fit:cover">` : ''}${a.image ? `<button type="button" onclick="removeArticleImage()" style="position:absolute;top:0;right:0;background:red;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:20px;text-align:center">✕</button>` : ''}</div>
               </div>
               <input type="hidden" name="image" value="${a.image || ''}">
             </div>
@@ -427,7 +427,7 @@ function showArticleForm(articleId) {
           <div class="form-group"><label>Image</label>
             <div style="display:flex;gap:1rem;align-items:start">
               <div style="flex:1"><input type="file" class="form-control" accept="image/*" onchange="previewArticleImage(this)"></div>
-              <div id="articleImagePreview" style="width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-light);flex-shrink:0"></div>
+              <div id="articleImagePreview" style="width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-light);flex-shrink:0;position:relative"></div>
             </div>
             <input type="hidden" name="image">
           </div>
@@ -491,7 +491,7 @@ function previewArticleImage(input) {
   const reader = new FileReader();
   reader.onload = function(e) {
     const preview = $('#articleImagePreview');
-    if (preview) preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    if (preview) preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover"><button type="button" onclick="removeArticleImage()" style="position:absolute;top:0;right:0;background:red;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:20px;text-align:center">✕</button>`;
     const hidden = input.closest('form')?.querySelector('input[name="image"]');
     if (hidden) hidden.value = e.target.result;
   };
@@ -499,6 +499,18 @@ function previewArticleImage(input) {
 }
 
 function editArticle(id) { showArticleForm(id); }
+
+window.removeArticleImage = function() {
+  const preview = $('#articleImagePreview');
+  if (preview) preview.innerHTML = '';
+  const form = document.querySelector('#articleImagePreview')?.closest('form');
+  if (form) {
+    const hidden = form.querySelector('input[name="image"]');
+    if (hidden) hidden.value = '';
+    const fileInput = form.querySelector('input[type="file"][accept="image/*"]');
+    if (fileInput) fileInput.value = '';
+  }
+};
 
 async function deleteArticle(id) {
   if (!confirm('Supprimer cet article ?')) return;
